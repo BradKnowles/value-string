@@ -1,0 +1,22 @@
+nug<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Dawn.ValueString</id>
+    <version>0.1.0.0</version>
+    <title>Value String</title>
+    <authors>Şafak Gür</authors>
+    <owners>safak</owners>
+    <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
+    <projectUrl>https://github.com/safakgur/value-string</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+        ValueString struct allows you to encapsulate a string and parse it to any type. It is intended to be used for convenience when there is a need to initialize typed instances from culture-neutral (invariant) strings - often read from a simple configuration file or a database table that contains data as string pairs.
+    </description>
+    <releaseNotes>Initial release.</releaseNotes>
+    <copyright>Copyright © 2016 Şafak Gür</copyright>
+    <tags>string parse</tags>
+    <dependencies>
+        <dependency id="System.Reflection" version="4.3.0" />
+    </dependencies>
+  </metadata>
+</package>

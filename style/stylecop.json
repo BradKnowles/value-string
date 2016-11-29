@@ -1,0 +1,20 @@
+﻿{
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+    "documentationRules": {
+      "companyName": "Şafak Gür",
+      "copyrightText": "Copyright © 2016 {companyName}. All rights reserved.\nLicensed under the {licenseName} license. See {licenseFile} in the project root for license information.",
+      "variables": {
+        "licenseName": "MIT",
+        "licenseFile": "LICENSE"
+      },
+      "xmlHeader": false,
+      "documentPrivateFields": true,
+      "documentPrivateElements": true,
+      "fileNamingConvention": "metadata"
+    },
+    "layoutRules": {
+      "newlineAtEndOfFile": "require"
+    }
+  }
+}
