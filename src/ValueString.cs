@@ -918,24 +918,24 @@ namespace Dawn
                     }
 
                     // Wrap the regular parser.
-                    if (fallbackToParse)
-                    {
-                        var parser = InitFunc(false);
-                        if (parser != null)
-                            return InitTryFunc(targetType, (string s, IFormatProvider provider, out T result) =>
+                    if (!fallbackToParse)
+                        return null;
+
+                    var parser = InitFunc(false);
+                    if (parser != null)
+                        return InitTryFunc(targetType, (string s, IFormatProvider provider, out T result) =>
+                        {
+                            try
                             {
-                                try
-                                {
-                                    result = parser(s, provider);
-                                    return true;
-                                }
-                                catch (Exception)
-                                {
-                                    result = default(T);
-                                    return false;
-                                }
-                            });
-                    }
+                                result = parser(s, provider);
+                                return true;
+                            }
+                            catch (Exception)
+                            {
+                                result = default(T);
+                                return false;
+                            }
+                        });
 
                     // Return a failure parser.
                     return InitTryFunc(targetType, (string s, IFormatProvider provider, out T result) =>
