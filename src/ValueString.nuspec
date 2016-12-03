@@ -1,5 +1,5 @@
-nug<?xml version="1.0"?>
-<package >
+<?xml version="1.0"?>
+<package>
   <metadata>
     <id>Dawn.ValueString</id>
     <version>1.0.0.0</version>
