@@ -15,6 +15,9 @@ namespace Dawn.Tests
     {
         #region Fields
 
+        /// <summary>The culture info of the United States.</summary>
+        private static readonly CultureInfo usCulture = new CultureInfo("en-US");
+
         /// <summary>The culture info of France.</summary>
         private static readonly CultureInfo frCulture = new CultureInfo("fr-FR");
 
@@ -76,59 +79,251 @@ namespace Dawn.Tests
         [Fact(DisplayName = nameof(ValueString) + " is equatable.")]
         public void ValueStringIsEquatable()
         {
-            StringComparison c = StringComparison.OrdinalIgnoreCase;
-
             var s1 = "a";
-            var v1 = new ValueString(s1);
-
-            Assert.Same(s1, v1.ToString());
-            Assert.Same(s1, v1.As<string>());
+            var v1a = new ValueString(s1);
+            var v1b = new ValueString(s1);
 
             var s2 = "A";
             var v2 = new ValueString(s2);
 
-            Assert.Equal(s1 == s2, v1 == v2);
-            Assert.Equal(s1.Equals(s2), v1.Equals(v2));
-            Assert.Equal(s1.Equals(s2, c), v1.Equals(v2, c));
+            // As<T>, ToString, Is and Is<T> returns the original string data.
+            Assert.NotSame(v1a, v1b);
+            Assert.Same(v1a.As<string>(), v1b.ToString());
 
-            s2 = null;
-            v2 = new ValueString(s2);
+            string temp;
+            Assert.True(v1a.Is(out temp));
+            Assert.Same(s1, temp);
+            Assert.True(v1a.Is<string>(out temp));
+            Assert.Same(s1, temp);
 
-            Assert.True(v2 == null); // null is implicitly converted to ValueString.
-            Assert.Same(null, v2.ToString());
-            Assert.NotSame(null, v2);
-            Assert.Equal(null, v2);
+            // Implements IEquatable<ValueString>.
+            var ve = Assert.IsAssignableFrom<IEquatable<ValueString>>(v1a);
+
+            Assert.True(ve.Equals(v1b));
+            Assert.False(ve.Equals(v2));
+
+            Assert.True(ve.Equals(s1)); // Implicit conversion from string.
+            Assert.False(ve.Equals(s2));
+
+            Assert.True((v1a as object).Equals(v1b)); // Equals(object) handles ValueString.
+            Assert.False((v2 as object).Equals(v1b));
+
+            // Implements IEquatable<string>.
+            var se = Assert.IsAssignableFrom<IEquatable<string>>(v1a);
+
+            Assert.True(se.Equals(s1));
+            Assert.False(se.Equals(s2));
+
+            Assert.True((v1a as object).Equals(s1)); // Equals(object) handles string.
+            Assert.False((v1a as object).Equals(s2));
+
+            // Comparison operators.
+            Assert.True(v1a == v1b);
+            Assert.True(v1a != v2);
+
+            Assert.False(v1a == v2);
+            Assert.False(v1a != v1b);
+
+            Assert.True(v1a == s1); // Implicit conversion from string.
+            Assert.True(v1a != s2);
+            Assert.True(v1a != null);
+
+            // StringComparison overload.
+            Assert.False(v1a.Equals(v2, StringComparison.Ordinal));
+            Assert.True(v1a.Equals(v2, StringComparison.OrdinalIgnoreCase));
+
+            // Convert and parse.
+            Assert.True(v1a.Is(s1));
+            Assert.False(v1a.Is(s2));
+
+            v1a = new ValueString(1);
+            Assert.True(v1a.Is(1));
+            Assert.False(v1a.Is(2));
+        }
+
+        /// <summary>
+        ///     Tests whether <see cref="ValueString" />
+        ///     allows <c>null</c> or empty values.
+        /// </summary>
+        [Fact(DisplayName = nameof(ValueString) + " allows null and empty values.")]
+        public void ValueStringAllowsNullAndEmptyValues()
+        {
+            var vNull = new ValueString(null);
+            Assert.NotNull(vNull);
+            Assert.Null(vNull.ToString());
+            Assert.Equal(vNull, null); // Implicit conversion from string.
+
+            var vEmpty = new ValueString(string.Empty);
+            Assert.Empty(vEmpty.ToString());
+            Assert.Equal(vEmpty, string.Empty); // Implicit conversion from string.
         }
 
         /// <summary>
         ///     Tests whether the <see cref="ValueString" />
-        ///     chooses the right parsing method for each type.
+        ///     supports any parsing method.
         /// </summary>
-        [Fact(DisplayName = nameof(ValueString) + " chooses the right parsing methods.")]
-        public void ValueStringChoosesTheRightParsingMethods()
+        [Fact(DisplayName = nameof(ValueString) + " supports any parsing method.")]
+        public void ValueStringSupportsAnyParsingMethod()
         {
-            // The order for As methods:
-            // 1. T Parse(string, IFormatProvider)
-            // 2. T Parse(string)
-            // 3. bool TryParse(string, IFormatProvider, out T)
-            // 4. bool TryParse(string, NumberStyles, IFormatProvider, out T)
-            // 5. bool TryParse(string, IFormatProvider, DateTimeStyles, out T)
-            // 6. bool TryParse(string, out T)
-            // 7. T(string)
+            CultureInfo.DefaultThreadCurrentCulture = frCulture;
 
-            // The order for Is methods
-            // 1. bool TryParse(string, IFormatProvider, out T)
-            // 2. bool TryParse(string, NumberStyles, IFormatProvider, out T)
-            // 3. bool TryParse(string, IFormatProvider, DateTimeStyles, out T)
-            // 4. bool TryParse(string, out T)
-            // 5. T Parse(string, IFormatProvider)
-            // 6. T Parse(string)
-            // 7. T(string)
+            var number = 1.5;
+            var date = DateTime.Today;
 
-            // TODO: Create custom types and test the order.
-            throw new NotImplementedException();
+            // T Parse(string, IFormatProvider) method.
+            Test<TestValuePF, double>(number);
+
+            // bool TryParse(string, IFormatProvider, out T) method.
+            Test<TestValueTPF, double>(number);
+
+            // bool TryParse(string, NumberStyles, IFormatProvider, out T) method.
+            Test<TestValueTPN, double>(number);
+
+            // bool TryParse(string, IFormatProvider, DateTimeStyles, out T) method.
+            Test<TestValueTPD, DateTime>(date);
+
+            // The rest of the types do not accept a format provider,
+            // so the invariant culture is not specified implicitly.
+            // They use the current thread's culture.
+            CultureInfo.DefaultThreadCurrentCulture = usCulture;
+
+            // T Parse(string) method.
+            Test<TestValueP, double>(number);
+
+            // bool TryParse(string, out T) method.
+            Test<TestValueTP, double>(number);
+
+            // T(string) constructor.
+            Test<TestValueC, double>(number);
+        }
+
+        /// <summary>
+        ///     Tests whether the specified type can be initialied from string.
+        /// </summary>
+        /// <typeparam name="TTarget">Type to initialize from string.</typeparam>
+        /// <typeparam name="TValue">Type of the target type's value.</typeparam>
+        /// <param name="value">
+        ///     The value to initialize a <see cref="ValueString" /> with
+        ///     and test whether a <typeparamref name="TTarget" />
+        ///     instance can be initialized from a string.
+        /// </param>
+        private static void Test<TTarget, TValue>(TValue value)
+            where TTarget : TestValue<TValue>
+        {
+            var v = new ValueString(value);
+            Assert.Equal(value, v.As<TTarget>().Value);
+
+            TTarget temp;
+            Assert.True(v.Is(out temp));
+            Assert.Equal(value, temp.Value);
         }
 
         #endregion Methods
+
+        #region Classes
+
+#pragma warning disable SA1600 // Elements must be documented
+
+        private abstract class TestValue<T>
+        {
+            public T Value { get; protected set; }
+        }
+
+        private sealed class TestValuePF : TestValue<double>
+        {
+            public static TestValuePF Parse(string s, IFormatProvider provider)
+                => new TestValuePF { Value = double.Parse(s, provider) };
+        }
+
+        private sealed class TestValueP : TestValue<double>
+        {
+            public static TestValueP Parse(string s)
+                => new TestValueP { Value = double.Parse(s) };
+        }
+
+        private sealed class TestValueTPF : TestValue<double>
+        {
+            public static bool TryParse(
+                string s, IFormatProvider provider, out TestValueTPF result)
+            {
+                double number;
+                if (double.TryParse(s, NumberStyles.Number, provider, out number))
+                {
+                    result = new TestValueTPF { Value = number };
+                    return true;
+                }
+
+                result = null;
+                return false;
+            }
+        }
+
+        private sealed class TestValueTPN : TestValue<double>
+        {
+            public static bool TryParse(
+                string s,
+                NumberStyles styles,
+                IFormatProvider provider,
+                out TestValueTPN result)
+            {
+                double number;
+                if (double.TryParse(s, styles, provider, out number))
+                {
+                    result = new TestValueTPN { Value = number };
+                    return true;
+                }
+
+                result = null;
+                return false;
+            }
+        }
+
+        private sealed class TestValueTPD : TestValue<DateTime>
+        {
+            public static bool TryParse(
+                string s,
+                IFormatProvider provider,
+                DateTimeStyles styles,
+                out TestValueTPD result)
+            {
+                DateTime date;
+                if (DateTime.TryParse(s, provider, styles, out date))
+                {
+                    result = new TestValueTPD { Value = date };
+                    return true;
+                }
+
+                result = null;
+                return false;
+            }
+        }
+
+        private sealed class TestValueTP : TestValue<double>
+        {
+            public static bool TryParse(string s, out TestValueTP result)
+            {
+                double number;
+                if (double.TryParse(s, out number))
+                {
+                    result = new TestValueTP { Value = number };
+                    return true;
+                }
+
+                result = null;
+                return false;
+            }
+        }
+
+        private sealed class TestValueC : TestValue<double>
+        {
+            public TestValueC(string s)
+            {
+                this.Value = double.Parse(s);
+            }
+        }
+
+#pragma warning restore SA1600 // Elements must be documented
+
+        #endregion Classes
     }
 }
