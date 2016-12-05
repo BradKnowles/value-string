@@ -35,10 +35,10 @@ namespace Dawn.Tests
             CultureInfo.DefaultThreadCurrentCulture = frCulture;
 
             var d = 1.5;
-            Assert.Equal("1,5", d.ToString()); // Comma-separated.
+            Assert.Equal("1,5", d.ToString());
 
-            var v = new ValueString(d);
-            Assert.Equal("1.5", v.ToString()); // Dot-separated.
+            var v = new ValueString(d); // Converted using the invariant culture.
+            Assert.Equal("1.5", v.ToString());
         }
 
         /// <summary>
@@ -87,34 +87,33 @@ namespace Dawn.Tests
             var v2 = new ValueString(s2);
 
             // As<T>, ToString, Is and Is<T> returns the original string data.
+            string temp;
             Assert.NotSame(v1a, v1b);
             Assert.Same(v1a.As<string>(), v1b.ToString());
-
-            string temp;
             Assert.True(v1a.Is(out temp));
             Assert.Same(s1, temp);
             Assert.True(v1a.Is<string>(out temp));
             Assert.Same(s1, temp);
 
             // Implements IEquatable<ValueString>.
-            var ve = Assert.IsAssignableFrom<IEquatable<ValueString>>(v1a);
+            var ev = Assert.IsAssignableFrom<IEquatable<ValueString>>(v1a);
 
-            Assert.True(ve.Equals(v1b));
-            Assert.False(ve.Equals(v2));
+            Assert.True(ev.Equals(v1b));
+            Assert.False(ev.Equals(v2));
 
-            Assert.True(ve.Equals(s1)); // Implicit conversion from string.
-            Assert.False(ve.Equals(s2));
+            Assert.True(ev.Equals(s1)); // Implicit conversion from string.
+            Assert.False(ev.Equals(s2));
 
-            Assert.True((v1a as object).Equals(v1b)); // Equals(object) handles ValueString.
+            Assert.True((v1a as object).Equals(v1b)); // Equals(object) is overridden.
             Assert.False((v2 as object).Equals(v1b));
 
             // Implements IEquatable<string>.
-            var se = Assert.IsAssignableFrom<IEquatable<string>>(v1a);
+            var es = Assert.IsAssignableFrom<IEquatable<string>>(v1a);
 
-            Assert.True(se.Equals(s1));
-            Assert.False(se.Equals(s2));
+            Assert.True(es.Equals(s1));
+            Assert.False(es.Equals(s2));
 
-            Assert.True((v1a as object).Equals(s1)); // Equals(object) handles string.
+            Assert.True((v1a as object).Equals(s1)); // Overridden Equals(object) handles strings.
             Assert.False((v1a as object).Equals(s2));
 
             // Comparison operators.
@@ -132,7 +131,7 @@ namespace Dawn.Tests
             Assert.False(v1a.Equals(v2, StringComparison.Ordinal));
             Assert.True(v1a.Equals(v2, StringComparison.OrdinalIgnoreCase));
 
-            // Convert and parse.
+            // Convert and compare.
             Assert.True(v1a.Is(s1));
             Assert.False(v1a.Is(s2));
 
@@ -142,8 +141,7 @@ namespace Dawn.Tests
         }
 
         /// <summary>
-        ///     Tests whether <see cref="ValueString" />
-        ///     allows <c>null</c> or empty values.
+        ///     Tests whether <see cref="ValueString" /> allows <c>null</c> values.
         /// </summary>
         [Fact(DisplayName = nameof(ValueString) + " allows null and empty values.")]
         public void ValueStringAllowsNullAndEmptyValues()
@@ -152,10 +150,7 @@ namespace Dawn.Tests
             Assert.NotNull(vNull);
             Assert.Null(vNull.ToString());
             Assert.Equal(vNull, null); // Implicit conversion from string.
-
-            var vEmpty = new ValueString(string.Empty);
-            Assert.Empty(vEmpty.ToString());
-            Assert.Equal(vEmpty, string.Empty); // Implicit conversion from string.
+            Assert.True((vNull as object).Equals(null)); // Overridden Equals(object) supports null values.
         }
 
         /// <summary>
@@ -165,8 +160,6 @@ namespace Dawn.Tests
         [Fact(DisplayName = nameof(ValueString) + " supports any parsing method.")]
         public void ValueStringSupportsAnyParsingMethod()
         {
-            CultureInfo.DefaultThreadCurrentCulture = frCulture;
-
             var number = 1.5;
             var date = DateTime.Today;
 
@@ -182,9 +175,38 @@ namespace Dawn.Tests
             // bool TryParse(string, IFormatProvider, DateTimeStyles, out T) method.
             Test<TestValueTPD, DateTime>(date);
 
-            // The rest of the types do not accept a format provider,
-            // so the invariant culture is not specified implicitly.
-            // They use the current thread's culture.
+            /*
+             * The rest of the types do not declare a parsing method that accepts
+             * a format provider. So they use the current thread's culture
+             * when they need culture-specific parsing information.
+             * This is not a good practice, since a type that requires
+             * culture-specific formatting information to parse a string to an
+             * instance of itself is expected to declare a Parse/TryParse
+             * overload that accepts an IFormatProvider instance by convention.
+             * So if T implements the IFormattable interface,
+             * `T.Parse(t.ToString(null, f), f)` should be equal to `t`.
+             */
+
+            // Since the ValueString constructor uses the invariant culture when
+            // possible, the rest of the types can only be deserialized correctly
+            // if the number formatting information supplied by the parsing thread's
+            // culture complies with the one supplied by the invariant culture.
+            // The invariant culture uses dot (.) as the decimal separator but
+            // the "fr-FR" culture uses comma (,) instead. That's why the following
+            // tests throw invalid cast exceptions.
+            CultureInfo.DefaultThreadCurrentCulture = frCulture;
+
+            // T Parse(string) method.
+            Assert.Throws<InvalidCastException>(() => Test<TestValueP, double>(number));
+
+            // bool TryParse(string, out T) method.
+            Assert.Throws<InvalidCastException>(() => Test<TestValueTP, double>(number));
+
+            // T(string) constructor.
+            Assert.Throws<InvalidCastException>(() => Test<TestValueC, double>(number));
+
+            // "en-US" culture, however, uses dot (.) as the decimal separator just
+            // like the invariant culture. That's why the following tests pass.
             CultureInfo.DefaultThreadCurrentCulture = usCulture;
 
             // T Parse(string) method.

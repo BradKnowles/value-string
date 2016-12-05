@@ -236,6 +236,10 @@ namespace Dawn
         ///     <c>true</c>, if the current value is equal to
         ///     <paramref name="other" />; otherwise, <c>false</c>.
         /// </returns>
+        /// <remarks>
+        ///     This method performs an ordinal (case-sensitive
+        ///     and culture-insensitive) comparison.
+        /// </remarks>
         public bool Equals(ValueString other) => this.data == other.data;
 
         /// <summary>
@@ -246,6 +250,10 @@ namespace Dawn
         ///     <c>true</c>, if the current value is equal to
         ///     <paramref name="other" />; otherwise, <c>false</c>.
         /// </returns>
+        /// <remarks>
+        ///     This method performs an ordinal (case-sensitive
+        ///     and culture-insensitive) comparison.
+        /// </remarks>
         bool IEquatable<string>.Equals(string other) => this.Equals(other);
 
         /// <summary>
@@ -256,12 +264,21 @@ namespace Dawn
         ///     <c>true</c>, if the current value is equal to
         ///     <paramref name="obj" />; otherwise, <c>false</c>.
         /// </returns>
+        /// <remarks>
+        ///     This method performs an ordinal (case-sensitive
+        ///     and culture-insensitive) comparison for
+        ///     <see cref="string" /> and <see cref="ValueString" /> instances.
+        /// </remarks>
         public override bool Equals(object obj)
         {
+            if (obj == null)
+                return this.data == null;
+
             var s = obj as string;
-            return s != null
-                ? this.Equals(s)
-                : (obj is ValueString && this.Equals((ValueString)obj));
+            if (s != null)
+                return this.Equals(s);
+
+            return obj is ValueString && this.Equals((ValueString)obj);
         }
 
         /// <summary>Returns the hash code for this instance.</summary>
