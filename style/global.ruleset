@@ -67,7 +67,7 @@
   <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
     <Rule Id="SA1124" Action="None" /> <!-- Regions may only be used for separating different types of code elements. -->
     <Rule Id="SA1303" Action="None" /> <!-- All local names (const included) must be in pascalCase. -->
-    <Rule Id="SA1311" Action="None" /> <!-- All private field names (static-readonly included) must be in pascalCase. -->
+    <Rule Id="SA1311" Action="None" /> <!-- All private field names (static-readonly included) must be in camelCase. -->
     <Rule Id="SA1503" Action="None" /> <!-- Braces can be omitted if followed by a blank line. -->
     <Rule Id="SA1519" Action="None" /> <!-- Same as SA1503. -->
   </Rules>

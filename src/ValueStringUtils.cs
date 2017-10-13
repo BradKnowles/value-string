@@ -85,12 +85,15 @@ namespace Dawn
             IFormatProvider provider,
             out TValue value)
         {
-            if (source == null)
+            try
+            {
+                if (source.TryGetValue(key, out ValueString v) && v.Is(provider, out value))
+                    return true;
+            }
+            catch (NullReferenceException)
+            {
                 throw new ArgumentNullException(nameof(source));
-
-            ValueString v;
-            if (source.TryGetValue(key, out v) && v.Is(provider, out value))
-                return true;
+            }
 
             value = default(TValue);
             return false;
@@ -125,10 +128,14 @@ namespace Dawn
         public static void Add<TKey>(
             this IDictionary<TKey, ValueString> target, TKey key, object value)
         {
-            if (target == null)
+            try
+            {
+                target.Add(key, new ValueString(value));
+            }
+            catch (NullReferenceException)
+            {
                 throw new ArgumentNullException(nameof(target));
-
-            target.Add(key, new ValueString(value));
+            }
         }
 
         #endregion Methods
