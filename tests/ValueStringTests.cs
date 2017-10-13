@@ -50,13 +50,11 @@ namespace Dawn.Tests
         {
             var time = new DateTime(2016, 11, 28, 22, 59, 58);
 
-            DateTime parsed;
-
             var fr = new ValueString(time.ToString(frCulture));
             Assert.Equal("28/11/2016 22:59:58", fr.ToString());
             Assert.Throws<InvalidCastException>(() => fr.As<DateTime>());
             Assert.Equal(time, fr.As<DateTime>(frCulture));
-            Assert.False(fr.Is(out parsed));
+            Assert.False(fr.Is(out DateTime parsed));
             Assert.True(fr.Is(frCulture, out parsed));
             Assert.False(fr.Is(time));
             Assert.True(fr.Is(time, frCulture));
@@ -87,10 +85,9 @@ namespace Dawn.Tests
             var v2 = new ValueString(s2);
 
             // As<T>, ToString, Is and Is<T> returns the original string data.
-            string temp;
             Assert.NotSame(v1a, v1b);
             Assert.Same(v1a.As<string>(), v1b.ToString());
-            Assert.True(v1a.Is(out temp));
+            Assert.True(v1a.Is(out var temp));
             Assert.Same(s1, temp);
             Assert.True(v1a.Is<string>(out temp));
             Assert.Same(s1, temp);
@@ -234,9 +231,7 @@ namespace Dawn.Tests
         {
             var v = new ValueString(value);
             Assert.Equal(value, v.As<TTarget>().Value);
-
-            TTarget temp;
-            Assert.True(v.Is(out temp));
+            Assert.True(v.Is(out TTarget temp));
             Assert.Equal(value, temp.Value);
         }
 
@@ -268,8 +263,7 @@ namespace Dawn.Tests
             public static bool TryParse(
                 string s, IFormatProvider provider, out TestValueTPF result)
             {
-                double number;
-                if (double.TryParse(s, NumberStyles.Number, provider, out number))
+                if (double.TryParse(s, NumberStyles.Number, provider, out var number))
                 {
                     result = new TestValueTPF { Value = number };
                     return true;
@@ -288,8 +282,7 @@ namespace Dawn.Tests
                 IFormatProvider provider,
                 out TestValueTPN result)
             {
-                double number;
-                if (double.TryParse(s, styles, provider, out number))
+                if (double.TryParse(s, styles, provider, out var number))
                 {
                     result = new TestValueTPN { Value = number };
                     return true;
@@ -308,8 +301,7 @@ namespace Dawn.Tests
                 DateTimeStyles styles,
                 out TestValueTPD result)
             {
-                DateTime date;
-                if (DateTime.TryParse(s, provider, styles, out date))
+                if (DateTime.TryParse(s, provider, styles, out var date))
                 {
                     result = new TestValueTPD { Value = date };
                     return true;
@@ -324,8 +316,7 @@ namespace Dawn.Tests
         {
             public static bool TryParse(string s, out TestValueTP result)
             {
-                double number;
-                if (double.TryParse(s, out number))
+                if (double.TryParse(s, out var number))
                 {
                     result = new TestValueTP { Value = number };
                     return true;

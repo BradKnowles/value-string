@@ -202,9 +202,8 @@ namespace Dawn
         /// </returns>
         public bool Is<T>(T other, IFormatProvider provider)
         {
-            T @this;
-            return this.Is(provider, out @this)
-                && EqualityComparer<T>.Default.Equals(@this, other);
+            return this.Is(provider, out T result)
+                && EqualityComparer<T>.Default.Equals(result, other);
         }
 
         /// <summary>
@@ -274,8 +273,7 @@ namespace Dawn
             if (obj == null)
                 return this.data == null;
 
-            var s = obj as string;
-            if (s != null)
+            if (obj is string s)
                 return this.Equals(s);
 
             return obj is ValueString && this.Equals((ValueString)obj);
@@ -817,8 +815,7 @@ namespace Dawn
                         if (parser != null)
                             return InitFunc(targetType, (s, provider) =>
                             {
-                                T result;
-                                if (parser(s, provider, out result))
+                                if (parser(s, provider, out var result))
                                     return result;
 
                                 throw new FormatException();
@@ -826,20 +823,17 @@ namespace Dawn
                     }
 
                     // Search for a suitable constructor.
-                    ConstructorInfo constructor;
-                    if (TryGetConstructor(targetType, common.pSig, out constructor))
+                    if (TryGetConstructor(targetType, common.pSig, out var constructor))
                     {
                         var f = common.GetP<T>(constructor);
                         return InitFunc(targetType, (s, provider) => f(s));
                     }
 
                     // Check for a custom parser.
-                    TPF<T> custom;
-                    if (CustomParser.TryGetParser(targetType, out custom))
+                    if (CustomParser.TryGetParser(targetType, out TPF<T> custom))
                         return (s, provider) =>
                         {
-                            T result;
-                            if (custom(s, provider, out result))
+                            if (custom(s, provider, out var result))
                                 return result;
 
                             throw new FormatException();
@@ -860,13 +854,11 @@ namespace Dawn
                 /// </returns>
                 private static PF<T> InitFunc(Type targetType, PF<T> parser)
                 {
-                    TPF<T> custom;
-                    return !CustomParser.TryGetParser(targetType, out custom)
+                    return !CustomParser.TryGetParser(targetType, out TPF<T> custom)
                         ? parser
                         : (s, provider) =>
                         {
-                            T result;
-                            return custom(s, provider, out result)
+                            return custom(s, provider, out var result)
                                 ? result
                                 : parser(s, provider);
                         };
@@ -974,8 +966,7 @@ namespace Dawn
                 /// </returns>
                 private static TPF<T> InitTryFunc(Type targetType, TPF<T> parser)
                 {
-                    TPF<T> custom;
-                    return !CustomParser.TryGetParser(targetType, out custom)
+                    return !CustomParser.TryGetParser(targetType, out TPF<T> custom)
                         ? parser
                         : (string s, IFormatProvider provider, out T result) =>
                         {
@@ -1009,7 +1000,7 @@ namespace Dawn
                             continue;
 
                         var mismatch = false;
-                        for (int i = 0; i < parameters.Length; i++)
+                        for (var i = 0; i < parameters.Length; i++)
                             if (parameters[i].ParameterType != common.pSig[i])
                             {
                                 mismatch = true;
@@ -1098,8 +1089,7 @@ namespace Dawn
                             return true;
                         }
 
-                        T r;
-                        if (DefaultParser<T>.TryFunc(s, provider, out r))
+                        if (DefaultParser<T>.TryFunc(s, provider, out var r))
                         {
                             result = r;
                             return true;
@@ -1144,8 +1134,7 @@ namespace Dawn
                 /// </returns>
                 public static bool TryGetParser<T>(Type type, out TPF<T> parser)
                 {
-                    object p;
-                    if (parsers.TryGetValue(type, out p))
+                    if (parsers.TryGetValue(type, out var p))
                     {
                         parser = p as TPF<T>;
                         return true;

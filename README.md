@@ -1,4 +1,5 @@
-ValueString struct allows you to encapsulate a string and parse it to any type.
+ValueString allows you to encapsulate an object as a culture-invariant string
+and parse it to any type that implements the Parse/TryParse pattern.
 
 It is intended to be used for convenience when there is a need to initialize
 typed instances from culture-neutral (invariant) strings - often read from a
@@ -32,11 +33,11 @@ value = new ValueString(1.5);
 value = "1.5";
 ```
 
-ValueString methods build lambda expressions calling the type's original
+ValueString builds lambda expressions that call the type's original
 parsing methods, and cache the compiled delegates for future use.
-Therefore they work almost as fast as the underlying parsing methods themselves.
+Therefore they essentially work as fast as the underlying parsing methods themselves.
 
-There are also the extension methods for parsing key/ValueString pairs.  
+There are also extension methods for parsing key/ValueString pairs.  
 Consider you inject the configuration parameters to your service like below:
 
 ```c#
