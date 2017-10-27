@@ -4,6 +4,7 @@
 namespace Dawn.Tests
 {
     using System;
+    using System.ComponentModel;
     using System.Globalization;
     using Xunit;
 
@@ -172,6 +173,9 @@ namespace Dawn.Tests
             // bool TryParse(string, IFormatProvider, DateTimeStyles, out T) method.
             Test<TestValueTPD, DateTime>(date);
 
+            // [TypeConverter] via TypeDescriptor.GetConverter.
+            Test<TestValueTC, double>(number);
+
             /*
              * The rest of the types do not declare a parsing method that accepts
              * a format provider. So they use the current thread's culture
@@ -324,6 +328,27 @@ namespace Dawn.Tests
 
                 result = null;
                 return false;
+            }
+        }
+
+        [TypeConverter(typeof(TestValueTCConverter))]
+        private sealed class TestValueTC : TestValue<double>
+        {
+            private sealed class TestValueTCConverter : TypeConverter
+            {
+                public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
+                    => sourceType == typeof(string);
+
+                public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
+                {
+                    switch (value)
+                    {
+                        case string s:
+                            return new TestValueTC { Value = double.Parse(s, culture) };
+                        default:
+                            return base.ConvertFrom(context, culture, value);
+                    }
+                }
             }
         }
 

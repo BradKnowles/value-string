@@ -3,19 +3,21 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Title>Value String</Title>
+    <AssemblyName>Dawn.ValueString</AssemblyName>
     <Product>Dawn Utils</Product>
-    <Version>1.0.2</Version>
+    <Version>1.1.0</Version>
     <FileVersion>1.0.0</FileVersion>
+    <RootNamespace>Dawn</RootNamespace>
     <CodeAnalysisRuleSet>../style/global.ruleset</CodeAnalysisRuleSet>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netstandard2.0\ValueString.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\Dawn.ValueString.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard2.0\ValueString.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.0\Dawn.ValueString.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,7 +33,7 @@
     <PackageProjectUrl>https://github.com/safakgur/value-string</PackageProjectUrl>
     <Copyright>Copyright © 2016 Şafak Gür</Copyright>
     <PackageTags>string parse</PackageTags>
-    <PackageReleaseNotes>Convert project to .NET Standard 2.0.</PackageReleaseNotes>
+    <PackageReleaseNotes>TypeConverterAttribute support.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/safakgur/value-string</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>

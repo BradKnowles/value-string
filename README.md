@@ -1,5 +1,3 @@
-![ValueString](/ValueString.png?raw=true)
-
 ValueString allows you to encapsulate an object as a culture-invariant string
 and parse it to any type that implements the Parse/TryParse pattern.
 
@@ -88,7 +86,8 @@ public SomeService(IReadOnlyDictionary<string, string> config)
 4. `static bool TryParse(string, NumberStyles, IFormatProvider, out T)` method
 5. `static bool TryParse(string, IFormatProvider, DateTimeStyles, out T)` method
 6. `static bool TryParse(string, out T)` method
-7. `T(string)` constructor
+7. [TypeConverterAttribute][2] via `TypeDescriptor.GetConverter`
+8. `T(string)` constructor
 
 `Is` overloads search for a parsing method to cache, in the following order:
 
@@ -98,7 +97,8 @@ public SomeService(IReadOnlyDictionary<string, string> config)
 4. `static bool TryParse(string, out T)` method
 5. `static T Parse(string, IFormatProvider)` method
 6. `static T Parse(string)` method
-7. `T(string)` constructor
+7. [TypeConverterAttribute][2] via `TypeDescriptor.GetConverter`
+8. `T(string)` constructor
 
 | Method family    | Parsing method not found or parsing method failed         |
 | ---------------- | --------------------------------------------------------- |
@@ -108,3 +108,4 @@ public SomeService(IReadOnlyDictionary<string, string> config)
 See [the unit tests][1] for details.
 
 [1]: tests/ValueStringTests.cs
+[2]: https://docs.microsoft.com/dotnet/api/system.componentmodel.typeconverterattribute
