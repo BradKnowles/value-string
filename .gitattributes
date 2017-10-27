@@ -3,5 +3,4 @@
 
 # C# and Visual Studio
 *.sln    merge=union
-*.xproj  merge=union
 *.cs     diff=csharp

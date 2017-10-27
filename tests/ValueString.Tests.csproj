@@ -2,17 +2,19 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>Dawn.ValueString.Tests</AssemblyName>
+    <RootNamespace>Dawn.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <CodeAnalysisRuleSet>../style/global.ruleset</CodeAnalysisRuleSet>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netcoreapp2.0\ValueString.Tests.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netcoreapp2.0\Dawn.ValueString.Tests.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netcoreapp2.0\ValueString.Tests.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netcoreapp2.0\Dawn.ValueString.Tests.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

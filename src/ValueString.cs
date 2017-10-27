@@ -5,6 +5,7 @@ namespace Dawn
 {
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Diagnostics;
     using System.Globalization;
     using System.Linq.Expressions;
@@ -815,12 +816,16 @@ namespace Dawn
                         if (parser != null)
                             return InitFunc(targetType, (s, provider) =>
                             {
-                                if (parser(s, provider, out var result))
-                                    return result;
-
-                                throw new FormatException();
+                                return parser(s, provider, out var result)
+                                    ? result
+                                    : throw new FormatException();
                             });
                     }
+
+                    // Check for the TypeConverterAttribute.
+                    var converter = TypeDescriptor.GetConverter(targetType);
+                    if (converter.CanConvertFrom(common.stringType))
+                        return (s, provider) => (T)converter.ConvertFromString(null, provider as CultureInfo, s);
 
                     // Search for a suitable constructor.
                     if (TryGetConstructor(targetType, common.pSig, out var constructor))
@@ -833,10 +838,9 @@ namespace Dawn
                     if (CustomParser.TryGetParser(targetType, out TPF<T> custom))
                         return (s, provider) =>
                         {
-                            if (custom(s, provider, out var result))
-                                return result;
-
-                            throw new FormatException();
+                            return custom(s, provider, out var result)
+                                ? result
+                                : throw new FormatException();
                         };
 
                     return null;
