@@ -19,8 +19,7 @@ var nullable = value.As<double?>(); // null.
 // ValueString.Is is just like ValueString.As - the only difference
 // being that it calls the type's TryParse method instead of Parse.
 value = new ValueString("1.1.1.1");
-IPAddress address;
-if (value.Is(out address)) // Calls IPAddress.TryParse.
+if (value.Is(out IPAddress address)) // Calls IPAddress.TryParse.
     Console.WriteLine("The IP address is: {0}", address);
 
 // ValueString constructor accepts a System.Object, and uses the invariant
