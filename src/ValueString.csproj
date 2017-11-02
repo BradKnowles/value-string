@@ -18,6 +18,8 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DocumentationFile>bin\Release\netstandard2.0\Dawn.ValueString.xml</DocumentationFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Properties/Key.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
@@ -35,7 +37,7 @@
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/safakgur/value-string</PackageProjectUrl>
     <Copyright>Copyright © 2016 Şafak Gür</Copyright>
-    <PackageTags>string parse</PackageTags>
+    <PackageTags>string parse serialization</PackageTags>
     <PackageReleaseNotes>Mark StyleCop as a private asset.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/safakgur/value-string</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
