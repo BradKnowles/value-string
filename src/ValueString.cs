@@ -44,8 +44,7 @@ namespace Dawn
         /// </remarks>
         public ValueString(object data)
         {
-            var f = data as IFormattable;
-            this.data = f != null
+            this.data = data is IFormattable f
                 ? f.ToString(null, CultureInfo.InvariantCulture)
                 : data?.ToString();
         }
@@ -322,57 +321,44 @@ namespace Dawn
             ///     The signature of parser methods
             ///     that accept a format provider.
             /// </summary>
-            private readonly Type[] pfSig;
+            private readonly Type[] formattableParserSig;
 
             /// <summary>
             ///     The signature of parser methods that
             ///     do not accept a format provider.
             /// </summary>
-            private readonly Type[] pSig;
+            private readonly Type[] parserSig;
 
-            /// <summary>
-            ///     The signature of number parser methods
-            ///     that do not accept a format provider.
-            /// </summary>
-            private readonly Type[] npfSig;
+            /// <summary>The signature of number parser methods.</summary>
+            private readonly Type[] numericParserSig;
 
-            /// <summary>
-            ///     The signature of date parser methods
-            ///     that do not accept a format provider.
-            /// </summary>
-            private readonly Type[] dpfSig;
+            /// <summary>The signature of date parser methods.</summary>
+            private readonly Type[] dateParserSig;
 
             /// <summary>
             ///     The parameter expressions of parser methods
             ///     that accept a format provider.
             /// </summary>
-            private readonly ParameterExpression[] pfParams;
+            private readonly ParameterExpression[] formattableParserParams;
 
             /// <summary>
             ///     The parameter expressions of parser methods
             ///     that do not accept a format provider.
             /// </summary>
-            private readonly ParameterExpression[] pParams;
+            private readonly ParameterExpression[] parserParams;
 
-            /// <summary>
-            ///     The parameter expressions of number parser
-            ///     methods that accept a format provider.
-            /// </summary>
-            private readonly ParameterExpression[] npfParams;
+            /// <summary>The parameter expressions of number parser methods.</summary>
+            private readonly ParameterExpression[] numericParserParams;
 
-            /// <summary>
-            ///     The parameter expressions of date parser
-            ///     methods that accept a format provider.
-            /// </summary>
-            private readonly ParameterExpression[] dpfParams;
+            /// <summary>The parameter expressions of date parser methods.</summary>
+            private readonly ParameterExpression[] dateParserParams;
 
             #endregion Fields
 
             #region Constructors
 
             /// <summary>
-            ///     Initializes a new instance of the
-            ///     <see cref="Parser" /> class.
+            ///     Initializes a new instance of the <see cref="Parser" /> class.
             /// </summary>
             private Parser()
             {
@@ -385,23 +371,23 @@ namespace Dawn
                 this.nullableValueType = typeof(Nullable<>);
                 this.nullableParserType = typeof(Nullable<>);
 
-                this.pfSig = new[] { this.stringType, this.providerType };
-                this.pSig = new[] { this.stringType };
+                this.formattableParserSig = new[] { this.stringType, this.providerType };
+                this.parserSig = new[] { this.stringType };
 
                 var nStylesType = typeof(NumberStyles);
                 var dStylesType = typeof(DateTimeStyles);
-                this.npfSig = new[] { this.stringType, nStylesType, this.providerType };
-                this.dpfSig = new[] { this.stringType, this.providerType, dStylesType };
+                this.numericParserSig = new[] { this.stringType, nStylesType, this.providerType };
+                this.dateParserSig = new[] { this.stringType, this.providerType, dStylesType };
 
                 var stringParam = Expression.Parameter(this.stringType, "s");
                 var providerParam = Expression.Parameter(this.providerType, "provider");
-                this.pfParams = new[] { stringParam, providerParam };
-                this.pParams = new[] { stringParam };
+                this.formattableParserParams = new[] { stringParam, providerParam };
+                this.parserParams = new[] { stringParam };
 
                 var nStylesParam = Expression.Parameter(nStylesType, "styles");
                 var dStylesParam = Expression.Parameter(dStylesType, "styles");
-                this.npfParams = new[] { stringParam, nStylesParam, providerParam };
-                this.dpfParams = new[] { stringParam, providerParam, dStylesParam };
+                this.numericParserParams = new[] { stringParam, nStylesParam, providerParam };
+                this.dateParserParams = new[] { stringParam, providerParam, dStylesParam };
             }
 
             #endregion Constructors
@@ -525,10 +511,10 @@ namespace Dawn
             ///     A delegate that parses a string to an
             ///     instance of <typeparamref name="T" />.
             /// </returns>
-            private PF<T> GetPF<T>(MethodInfo method)
+            private PF<T> CompileFormattableParser<T>(MethodInfo method)
             {
-                var c = Expression.Call(method, this.pfParams);
-                var l = Expression.Lambda<PF<T>>(c, this.pfParams);
+                var c = Expression.Call(method, this.formattableParserParams);
+                var l = Expression.Lambda<PF<T>>(c, this.formattableParserParams);
                 return l.Compile();
             }
 
@@ -542,10 +528,10 @@ namespace Dawn
             ///     A delegate that parses a string to an
             ///     instance of <typeparamref name="T" />.
             /// </returns>
-            private P<T> GetP<T>(MethodInfo method)
+            private P<T> CompileParser<T>(MethodInfo method)
             {
-                var c = Expression.Call(method, this.pParams);
-                var l = Expression.Lambda<P<T>>(c, this.pParams);
+                var c = Expression.Call(method, this.parserParams);
+                var l = Expression.Lambda<P<T>>(c, this.parserParams);
                 return l.Compile();
             }
 
@@ -559,10 +545,10 @@ namespace Dawn
             ///     A delegate that parses a string to an
             ///     instance of <typeparamref name="T" />.
             /// </returns>
-            private P<T> GetP<T>(ConstructorInfo constructor)
+            private P<T> CompileCtor<T>(ConstructorInfo constructor)
             {
-                var c = Expression.New(constructor, this.pParams);
-                var l = Expression.Lambda<P<T>>(c, this.pParams);
+                var c = Expression.New(constructor, this.parserParams);
+                var l = Expression.Lambda<P<T>>(c, this.parserParams);
                 return l.Compile();
             }
 
@@ -580,10 +566,10 @@ namespace Dawn
             ///     A delegate that parses a string to an
             ///     instance of <typeparamref name="T" />.
             /// </returns>
-            private TPF<T> GetTPF<T>(MethodInfo method, Type outTargetType)
+            private TPF<T> CompileSafeFormattableParser<T>(MethodInfo method, Type outTargetType)
             {
                 var o = Expression.Parameter(outTargetType, "result");
-                var p = this.GetAdded(this.pfParams, o);
+                var p = this.GetAdded(this.formattableParserParams, o);
                 var c = Expression.Call(method, p);
                 var l = Expression.Lambda<TPF<T>>(c, p);
                 return l.Compile();
@@ -606,10 +592,11 @@ namespace Dawn
             ///     A delegate that parses a string to an
             ///     instance of <typeparamref name="T" />.
             /// </returns>
-            private TPF<T> GetNumericTPF<T>(MethodInfo method, Type targetType, Type outTargetType)
+            private TPF<T> CompileSafeNumericParser<T>(
+                MethodInfo method, Type targetType, Type outTargetType)
             {
                 var o = Expression.Parameter(outTargetType, "result");
-                var p = this.GetAdded(this.npfParams, o);
+                var p = this.GetAdded(this.numericParserParams, o);
                 var c = Expression.Call(method, p);
                 var l = Expression.Lambda<NTPF<T>>(c, p);
                 var d = l.Compile();
@@ -631,10 +618,10 @@ namespace Dawn
             ///     A delegate that parses a string to an
             ///     instance of <typeparamref name="T" />.
             /// </returns>
-            private TPF<T> GetDateTPF<T>(MethodInfo method, Type outTargetType)
+            private TPF<T> CompileSafeDateParser<T>(MethodInfo method, Type outTargetType)
             {
                 var o = Expression.Parameter(outTargetType, "result");
-                var p = this.GetAdded(this.dpfParams, o);
+                var p = this.GetAdded(this.dateParserParams, o);
                 var c = Expression.Call(method, p);
                 var l = Expression.Lambda<DTPF<T>>(c, p);
                 var d = l.Compile();
@@ -656,10 +643,10 @@ namespace Dawn
             ///     A delegate that parses a string to an
             ///     instance of <typeparamref name="T" />.
             /// </returns>
-            private TP<T> GetTP<T>(MethodInfo method, Type outTargetType)
+            private TP<T> CompileSafeParser<T>(MethodInfo method, Type outTargetType)
             {
                 var o = Expression.Parameter(outTargetType, "result");
-                var p = this.GetAdded(this.pParams, o);
+                var p = this.GetAdded(this.parserParams, o);
                 var c = Expression.Call(method, p);
                 var lambda = Expression.Lambda<TP<T>>(c, p);
                 return lambda.Compile();
@@ -700,10 +687,10 @@ namespace Dawn
             /// <returns>
             ///     A strongly-typed parser for the specified target type.
             /// </returns>
-            private T GetNullablePF<T>(Type targetType, string fieldName)
+            private T CompileNullableParser<T>(Type targetType, string fieldName)
             {
                 var nullableParserType = this.nullableParserType.MakeGenericType(targetType);
-                var f = Expression.Field(null, nullableParserType.GetRuntimeField(fieldName));
+                var f = Expression.Field(null, nullableParserType.GetField(fieldName));
                 var l = Expression.Lambda<Func<T>>(f, null);
                 return l.Compile()();
             }
@@ -781,18 +768,18 @@ namespace Dawn
 
                     // Initialize a nullable value parser if the target type is nullable.
                     if (common.IsNullable(targetType, out targetType))
-                        return common.GetNullablePF<PF<T>>(targetType, nameof(Func));
+                        return common.CompileNullableParser<PF<T>>(targetType, nameof(Func));
 
                     // Search for the parsing method.
                     const string name = "Parse";
-                    var method = targetType.GetRuntimeMethod(name, common.pfSig);
+                    var method = targetType.GetMethod(name, common.formattableParserSig);
                     if (method?.ReturnType == targetType && method.IsStatic)
-                        return InitFunc(targetType, common.GetPF<T>(method));
+                        return InitFunc(targetType, common.CompileFormattableParser<T>(method));
 
-                    method = targetType.GetRuntimeMethod(name, common.pSig);
+                    method = targetType.GetMethod(name, common.parserSig);
                     if (method?.ReturnType == targetType && method.IsStatic)
                     {
-                        var f = common.GetP<T>(method);
+                        var f = common.CompileParser<T>(method);
                         return InitFunc(targetType, (s, provider) => f(s));
                     }
 
@@ -815,9 +802,9 @@ namespace Dawn
                         return (s, provider) => (T)converter.ConvertFromString(null, provider as CultureInfo, s);
 
                     // Search for a suitable constructor.
-                    if (TryGetConstructor(targetType, common.pSig, out var constructor))
+                    if (TryGetConstructor(targetType, common.parserSig, out var constructor))
                     {
-                        var f = common.GetP<T>(constructor);
+                        var f = common.CompileCtor<T>(constructor);
                         return InitFunc(targetType, (s, provider) => f(s));
                     }
 
@@ -880,38 +867,38 @@ namespace Dawn
 
                     // Initialize a nullable value parser if the target type is nullable.
                     if (common.IsNullable(targetType, out targetType))
-                        return common.GetNullablePF<TPF<T>>(targetType, nameof(TryFunc));
+                        return common.CompileNullableParser<TPF<T>>(targetType, nameof(TryFunc));
 
                     // Search for a parsing method.
                     const string name = "TryParse";
                     var outTargetType = targetType.MakeByRefType();
 
-                    var sig = common.GetAdded(common.pfSig, outTargetType);
-                    var method = targetType.GetRuntimeMethod(name, sig);
+                    var sig = common.GetAdded(common.formattableParserSig, outTargetType);
+                    var method = targetType.GetMethod(name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
-                            common.GetTPF<T>(method, outTargetType));
+                            common.CompileSafeFormattableParser<T>(method, outTargetType));
 
-                    sig = common.GetAdded(common.npfSig, outTargetType);
-                    method = targetType.GetRuntimeMethod(name, sig);
+                    sig = common.GetAdded(common.numericParserSig, outTargetType);
+                    method = targetType.GetMethod(name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
-                            common.GetNumericTPF<T>(method, targetType, outTargetType));
+                            common.CompileSafeNumericParser<T>(method, targetType, outTargetType));
 
-                    sig = common.GetAdded(common.dpfSig, outTargetType);
-                    method = targetType.GetRuntimeMethod(name, sig);
+                    sig = common.GetAdded(common.dateParserSig, outTargetType);
+                    method = targetType.GetMethod(name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
-                            common.GetDateTPF<T>(method, outTargetType));
+                            common.CompileSafeDateParser<T>(method, outTargetType));
 
-                    sig = common.GetAdded(common.pSig, outTargetType);
-                    method = targetType.GetRuntimeMethod(name, sig);
+                    sig = common.GetAdded(common.parserSig, outTargetType);
+                    method = targetType.GetMethod(name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                     {
-                        var f = common.GetTP<T>(method, outTargetType);
+                        var f = common.CompileSafeParser<T>(method, outTargetType);
                         return InitTryFunc(
                             targetType,
                             (string s, IFormatProvider provider, out T result) => f(s, out result));
@@ -987,12 +974,12 @@ namespace Dawn
                     foreach (var c in type.GetTypeInfo().DeclaredConstructors)
                     {
                         var parameters = c.GetParameters();
-                        if (parameters.Length != common.pSig.Length)
+                        if (parameters.Length != common.parserSig.Length)
                             continue;
 
                         var mismatch = false;
                         for (var i = 0; i < parameters.Length; i++)
-                            if (parameters[i].ParameterType != common.pSig[i])
+                            if (parameters[i].ParameterType != common.parserSig[i])
                             {
                                 mismatch = true;
                                 break;
