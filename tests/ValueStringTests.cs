@@ -4,6 +4,7 @@
 namespace Dawn.Tests
 {
     using System;
+    using System.Collections.Generic;
     using System.ComponentModel;
     using System.Globalization;
     using Xunit;
@@ -30,7 +31,7 @@ namespace Dawn.Tests
         ///     Tests whether the <see cref="ValueString" /> constructor uses
         ///     the invariant culture when converting its argument to string.
         /// </summary>
-        [Fact(DisplayName = nameof(ValueString) + " constructor uses invariant culture.")]
+        [Fact(DisplayName = "ValueString ctor uses invariant culture.")]
         public void ValueStringConstructorUsesInvariantCulture()
         {
             CultureInfo.DefaultThreadCurrentCulture = frCulture;
@@ -46,7 +47,7 @@ namespace Dawn.Tests
         ///     Tests whether the <see cref="ValueString" /> methods use the
         ///     invariant culture by default when converting the string data.
         /// </summary>
-        [Fact(DisplayName = nameof(ValueString) + " methods use invariant culture.")]
+        [Fact(DisplayName = "ValueString methods use invariant culture.")]
         public void ValueStringMethodsUseInvariantCultureByDefault()
         {
             var time = new DateTime(2016, 11, 28, 22, 59, 58);
@@ -75,7 +76,7 @@ namespace Dawn.Tests
         /// <summary>
         ///     Tests whether the <see cref="ValueString" /> is equatable.
         /// </summary>
-        [Fact(DisplayName = nameof(ValueString) + " is equatable.")]
+        [Fact(DisplayName = "ValueString is equatable.")]
         public void ValueStringIsEquatable()
         {
             var s1 = "a";
@@ -141,7 +142,7 @@ namespace Dawn.Tests
         /// <summary>
         ///     Tests whether <see cref="ValueString" /> allows <c>null</c> values.
         /// </summary>
-        [Fact(DisplayName = nameof(ValueString) + " allows null and empty values.")]
+        [Fact(DisplayName = "ValueString allows null and empty values.")]
         public void ValueStringAllowsNullAndEmptyValues()
         {
             var vNull = new ValueString(null);
@@ -153,10 +154,10 @@ namespace Dawn.Tests
 
         /// <summary>
         ///     Tests whether the <see cref="ValueString" />
-        ///     supports any parsing method.
+        ///     supports all parsing methods.
         /// </summary>
-        [Fact(DisplayName = nameof(ValueString) + " supports any parsing method.")]
-        public void ValueStringSupportsAnyParsingMethod()
+        [Fact(DisplayName = "ValueString supports all parsing methods.")]
+        public void ValueStringSupportsAllParsingMethods()
         {
             var number = 1.5;
             var date = DateTime.Today;
@@ -221,7 +222,62 @@ namespace Dawn.Tests
         }
 
         /// <summary>
-        ///     Tests whether the specified type can be initialied from string.
+        ///     Tests whether the dictionary extensions in <see cref="ValueStringUtils" />
+        ///     validate their arguments.
+        /// </summary>
+        [Fact(DisplayName = "Dictionary extensions validate their arguments.")]
+        public void DictionaryExtensionsWork()
+        {
+            var dict = null as Dictionary<string, ValueString>;
+            Assert.Throws<ArgumentNullException>("source", () => dict.TryGetValue("Rate", out double value));
+            Assert.Throws<ArgumentNullException>("source", () => dict.TryGetValue("Rate", null, out double value));
+            Assert.Throws<ArgumentNullException>("target", () => dict.Add("Rate", .1));
+            Assert.Throws<ArgumentNullException>("target", () => dict.Set("Rate", .1));
+
+            dict = new Dictionary<string, ValueString>();
+            Assert.Throws<ArgumentNullException>("key", () => dict.TryGetValue(null, out double value));
+            Assert.Throws<ArgumentNullException>("key", () => dict.TryGetValue(null, null, out double value));
+            Assert.Throws<ArgumentNullException>("key", () => dict.Add(null, .1));
+            Assert.Throws<ArgumentNullException>("key", () => dict.Set(null, .1));
+        }
+
+        /// <summary>
+        ///     Tests whether the dictionary extensions in <see cref="ValueStringUtils" />
+        ///     use the specified format providers and fallback to the
+        ///     invariant culture when no format provider is specified.
+        /// </summary>
+        [Fact(DisplayName = "Dictionary extensions use the right format providers.")]
+        public void DictionaryExtensionsUseRightFormatProviders()
+        {
+            var dict = new Dictionary<string, ValueString>();
+
+            // Add and set methods should be converted using the invariant
+            // culture despite the current culture being "fr-FR".
+            CultureInfo.DefaultThreadCurrentCulture = frCulture;
+
+            dict.Add("A", .1);
+            Assert.Equal("0.1", dict["A"]);
+
+            dict.Set("B", .2);
+            Assert.Equal("0.2", dict["B"]);
+
+            // TryGetValue overloads should convert the value using the invariant
+            // culture unless another format provider is specified.
+            Assert.True(dict.TryGetValue("A", out double a));
+            Assert.Equal(.1, a);
+
+            Assert.True(dict.TryGetValue("A", usCulture, out a));
+            Assert.Equal(.1, a);
+
+            Assert.True(dict.TryGetValue("B", out double b));
+            Assert.Equal(.2, b);
+
+            Assert.False(dict.TryGetValue("B", frCulture, out b));
+            Assert.Equal(0, b);
+        }
+
+        /// <summary>
+        ///     Tests whether the specified type can be initialized from string.
         /// </summary>
         /// <typeparam name="TTarget">Type to initialize from string.</typeparam>
         /// <typeparam name="TValue">Type of the target type's value.</typeparam>
@@ -355,9 +411,7 @@ namespace Dawn.Tests
         private sealed class TestValueC : TestValue<double>
         {
             public TestValueC(string s)
-            {
-                this.Value = double.Parse(s);
-            }
+                => this.Value = double.Parse(s);
         }
 
 #pragma warning restore SA1600 // Elements must be documented
