@@ -19,9 +19,7 @@ namespace Dawn
         ///      the specified key to the specified type,
         ///      using the invariant culture.
         /// </summary>
-        /// <typeparam name="TKey">
-        ///     The type of keys in the source dictionary.
-        /// </typeparam>
+        /// <typeparam name="TKey">The type of keys in the target dictionary.</typeparam>
         /// <typeparam name="TValue">
         ///     The type to convert the value to.
         /// </typeparam>
@@ -53,9 +51,7 @@ namespace Dawn
         ///      the specified key to the specified type,
         ///      using the specified format provider.
         /// </summary>
-        /// <typeparam name="TKey">
-        ///     The type of keys in the source dictionary.
-        /// </typeparam>
+        /// <typeparam name="TKey">The type of keys in the target dictionary.</typeparam>
         /// <typeparam name="TValue">
         ///     The type to convert the value to.
         /// </typeparam>
@@ -103,9 +99,7 @@ namespace Dawn
         ///     Adds an element with the provided key
         ///     and value to the specified dictionary.
         /// </summary>
-        /// <typeparam name="TKey">
-        ///     The type of keys in the target dictionary.
-        /// </typeparam>
+        /// <typeparam name="TKey">The type of keys in the target dictionary.</typeparam>
         /// <param name="target">The target dictionary.</param>
         /// <param name="key">
         ///     The object to use as the key of the element to add.
@@ -131,6 +125,35 @@ namespace Dawn
             try
             {
                 target.Add(key, new ValueString(value));
+            }
+            catch (NullReferenceException)
+            {
+                throw new ArgumentNullException(nameof(target));
+            }
+        }
+
+        /// <summary>Sets the value of an element with the provided key.</summary>
+        /// <typeparam name="TKey">The type of keys in the target dictionary.</typeparam>
+        /// <param name="target">The target dictionary.</param>
+        /// <param name="key">The object to use as the key of the element to set.</param>
+        /// <param name="value">The object to use as the value of the element to set.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     <paramref name="target" /> or
+        ///     <paramref name="key" /> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     <paramref name="target" /> is read-only.
+        /// </exception>
+        /// <remarks>
+        ///     Invariant culture will be used converting the value to string
+        ///     if its type implements <see cref="IFormattable" />.
+        /// </remarks>
+        public static void Set<TKey>(
+            this IDictionary<TKey, ValueString> target, TKey key, object value)
+        {
+            try
+            {
+                target[key] = new ValueString(value);
             }
             catch (NullReferenceException)
             {
