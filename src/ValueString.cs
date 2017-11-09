@@ -312,15 +312,6 @@ namespace Dawn
             /// <summary>The <see cref="bool" /> type.</summary>
             private readonly Type booleanType;
 
-            /// <summary>The <see cref="decimal" /> type.</summary>
-            private readonly Type decimalType;
-
-            /// <summary>The <see cref="double" /> type.</summary>
-            private readonly Type doubleType;
-
-            /// <summary>The <see cref="float" /> type.</summary>
-            private readonly Type floatType;
-
             /// <summary>The <see cref="System.Nullable{T}" /> type.</summary>
             private readonly Type nullableValueType;
 
@@ -391,11 +382,7 @@ namespace Dawn
                 this.providerType = typeof(IFormatProvider);
                 this.booleanType = typeof(bool);
 
-                this.decimalType = typeof(decimal);
-                this.doubleType = typeof(double);
-                this.floatType = typeof(float);
-
-                this.nullableValueType = typeof(System.Nullable<>);
+                this.nullableValueType = typeof(Nullable<>);
                 this.nullableParserType = typeof(Nullable<>);
 
                 this.pfSig = new[] { this.stringType, this.providerType };

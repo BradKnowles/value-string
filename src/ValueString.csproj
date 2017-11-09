@@ -5,7 +5,7 @@
     <Title>Value String</Title>
     <AssemblyName>Dawn.ValueString</AssemblyName>
     <Product>Dawn Utils</Product>
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
     <FileVersion>1.0.0</FileVersion>
     <RootNamespace>Dawn</RootNamespace>
     <CodeAnalysisRuleSet>../style/global.ruleset</CodeAnalysisRuleSet>
@@ -18,6 +18,8 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DocumentationFile>bin\Release\netstandard2.0\Dawn.ValueString.xml</DocumentationFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Properties/Key.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
@@ -35,8 +37,11 @@
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/safakgur/value-string</PackageProjectUrl>
     <Copyright>Copyright © 2016 Şafak Gür</Copyright>
-    <PackageTags>string parse</PackageTags>
-    <PackageReleaseNotes>Mark StyleCop as a private asset.</PackageReleaseNotes>
+    <PackageTags>string parse serialization</PackageTags>
+    <PackageReleaseNotes>
+      * Signed the assembly with a strong name.
+      * Added ValueStringUtils.Set dictionary extension.
+    </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/safakgur/value-string</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
