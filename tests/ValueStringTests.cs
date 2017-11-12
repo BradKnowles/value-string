@@ -90,7 +90,6 @@ namespace Dawn.Tests
             var v2 = new ValueString(s2);
 
             // As<T>, ToString, Is and Is<T> returns the original string data.
-            Assert.NotSame(v1a, v1b);
             Assert.Same(v1a.As<string>(), v1b.ToString());
             Assert.True(v1a.Is(out var temp));
             Assert.Same(s1, temp);
@@ -145,14 +144,13 @@ namespace Dawn.Tests
         /// <summary>
         ///     Tests whether <see cref="ValueString" /> allows <c>null</c> values.
         /// </summary>
-        [Fact(DisplayName = "ValueString allows null and empty values.")]
-        public void ValueStringAllowsNullAndEmptyValues()
+        [Fact(DisplayName = "ValueString allows null values.")]
+        public void ValueStringAllowsNullValues()
         {
             var vNull = new ValueString(null);
-            Assert.NotNull(vNull);
             Assert.Null(vNull.ToString());
-            Assert.Equal(vNull, null); // Implicit conversion from string.
-            Assert.True((vNull as object).Equals(null)); // Overridden Equals(object) supports null values.
+            Assert.True(vNull.Equals(null as string));
+            Assert.True(vNull.Equals(null as object));
         }
 
         /// <summary>
