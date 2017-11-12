@@ -7,6 +7,9 @@ namespace Dawn.Tests
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.Globalization;
+    using System.IO;
+    using System.Runtime.Serialization.Formatters.Binary;
+    using System.Xml.Serialization;
     using Xunit;
 
     /// <summary>
@@ -34,7 +37,7 @@ namespace Dawn.Tests
         [Fact(DisplayName = "ValueString ctor uses invariant culture.")]
         public void ValueStringConstructorUsesInvariantCulture()
         {
-            CultureInfo.DefaultThreadCurrentCulture = frCulture;
+            CultureInfo.CurrentCulture = frCulture;
 
             var d = 1.5;
             Assert.Equal("1,5", d.ToString());
@@ -163,19 +166,19 @@ namespace Dawn.Tests
             var date = DateTime.Today;
 
             // T Parse(string, IFormatProvider) method.
-            Test<TestValuePF, double>(number);
+            Test<FormattableMock, double>(number);
 
             // bool TryParse(string, IFormatProvider, out T) method.
-            Test<TestValueTPF, double>(number);
+            Test<SafeFormattableMock, double>(number);
 
             // bool TryParse(string, NumberStyles, IFormatProvider, out T) method.
-            Test<TestValueTPN, double>(number);
+            Test<SafeNumericMock, double>(number);
 
             // bool TryParse(string, IFormatProvider, DateTimeStyles, out T) method.
-            Test<TestValueTPD, DateTime>(date);
+            Test<SafeDateMock, DateTime>(date);
 
             // [TypeConverter] via TypeDescriptor.GetConverter.
-            Test<TestValueTC, double>(number);
+            Test<TypeConverterMock, double>(number);
 
             /*
              * The rest of the types do not declare a parsing method that accepts
@@ -196,29 +199,63 @@ namespace Dawn.Tests
             // The invariant culture uses dot (.) as the decimal separator but
             // the "fr-FR" culture uses comma (,) instead. That's why the following
             // tests throw invalid cast exceptions.
-            CultureInfo.DefaultThreadCurrentCulture = frCulture;
+            CultureInfo.CurrentCulture = frCulture;
 
             // T Parse(string) method.
-            Assert.Throws<InvalidCastException>(() => Test<TestValueP, double>(number));
+            Assert.Throws<InvalidCastException>(() => Test<PlainMock, double>(number));
 
             // bool TryParse(string, out T) method.
-            Assert.Throws<InvalidCastException>(() => Test<TestValueTP, double>(number));
+            Assert.Throws<InvalidCastException>(() => Test<SafeMock, double>(number));
 
             // T(string) constructor.
-            Assert.Throws<InvalidCastException>(() => Test<TestValueC, double>(number));
+            Assert.Throws<InvalidCastException>(() => Test<ConstructorMock, double>(number));
 
             // "en-US" culture, however, uses dot (.) as the decimal separator just
             // like the invariant culture. That's why the following tests pass.
-            CultureInfo.DefaultThreadCurrentCulture = usCulture;
+            CultureInfo.CurrentCulture = usCulture;
 
             // T Parse(string) method.
-            Test<TestValueP, double>(number);
+            Test<PlainMock, double>(number);
 
             // bool TryParse(string, out T) method.
-            Test<TestValueTP, double>(number);
+            Test<SafeMock, double>(number);
 
             // T(string) constructor.
-            Test<TestValueC, double>(number);
+            Test<ConstructorMock, double>(number);
+        }
+
+        /// <summary>
+        ///     Tests whether the <see cref="ValueString" />
+        ///     can be properly serialized and deserialized.
+        /// </summary>
+        [Fact(DisplayName = "ValueString is serializable.")]
+        public void ValueStringIsSerializable()
+        {
+            Test("1");
+            Test(null);
+
+            void Test(ValueString v)
+            {
+                using (var memory = new MemoryStream())
+                {
+                    // Test the XML serializer.
+                    var xmlSerializer = new XmlSerializer(typeof(ValueString));
+                    xmlSerializer.Serialize(memory, v);
+                    memory.Position = 0;
+
+                    var deserialized = (ValueString)xmlSerializer.Deserialize(memory);
+                    Assert.Equal(deserialized, v);
+                    memory.SetLength(0);
+
+                    // Test the binary formatter.
+                    var binaryFormatter = new BinaryFormatter();
+                    binaryFormatter.Serialize(memory, v);
+                    memory.Position = 0;
+
+                    deserialized = (ValueString)binaryFormatter.Deserialize(memory);
+                    Assert.Equal(deserialized, v);
+                }
+            }
         }
 
         /// <summary>
@@ -253,7 +290,7 @@ namespace Dawn.Tests
 
             // Add and set methods should be converted using the invariant
             // culture despite the current culture being "fr-FR".
-            CultureInfo.DefaultThreadCurrentCulture = frCulture;
+            CultureInfo.CurrentCulture = frCulture;
 
             dict.Add("A", .1);
             Assert.Equal("0.1", dict["A"]);
@@ -287,7 +324,7 @@ namespace Dawn.Tests
         ///     instance can be initialized from a string.
         /// </param>
         private static void Test<TTarget, TValue>(TValue value)
-            where TTarget : TestValue<TValue>
+            where TTarget : BaseMock<TValue>
         {
             var v = new ValueString(value);
             Assert.Equal(value, v.As<TTarget>().Value);
@@ -301,31 +338,31 @@ namespace Dawn.Tests
 
 #pragma warning disable SA1600 // Elements must be documented
 
-        private abstract class TestValue<T>
+        private abstract class BaseMock<T>
         {
             public T Value { get; protected set; }
         }
 
-        private sealed class TestValuePF : TestValue<double>
+        private sealed class FormattableMock : BaseMock<double>
         {
-            public static TestValuePF Parse(string s, IFormatProvider provider)
-                => new TestValuePF { Value = double.Parse(s, provider) };
+            public static FormattableMock Parse(string s, IFormatProvider provider)
+                => new FormattableMock { Value = double.Parse(s, provider) };
         }
 
-        private sealed class TestValueP : TestValue<double>
+        private sealed class PlainMock : BaseMock<double>
         {
-            public static TestValueP Parse(string s)
-                => new TestValueP { Value = double.Parse(s) };
+            public static PlainMock Parse(string s)
+                => new PlainMock { Value = double.Parse(s) };
         }
 
-        private sealed class TestValueTPF : TestValue<double>
+        private sealed class SafeFormattableMock : BaseMock<double>
         {
             public static bool TryParse(
-                string s, IFormatProvider provider, out TestValueTPF result)
+                string s, IFormatProvider provider, out SafeFormattableMock result)
             {
                 if (double.TryParse(s, NumberStyles.Number, provider, out var number))
                 {
-                    result = new TestValueTPF { Value = number };
+                    result = new SafeFormattableMock { Value = number };
                     return true;
                 }
 
@@ -334,17 +371,17 @@ namespace Dawn.Tests
             }
         }
 
-        private sealed class TestValueTPN : TestValue<double>
+        private sealed class SafeNumericMock : BaseMock<double>
         {
             public static bool TryParse(
                 string s,
                 NumberStyles styles,
                 IFormatProvider provider,
-                out TestValueTPN result)
+                out SafeNumericMock result)
             {
                 if (double.TryParse(s, styles, provider, out var number))
                 {
-                    result = new TestValueTPN { Value = number };
+                    result = new SafeNumericMock { Value = number };
                     return true;
                 }
 
@@ -353,17 +390,17 @@ namespace Dawn.Tests
             }
         }
 
-        private sealed class TestValueTPD : TestValue<DateTime>
+        private sealed class SafeDateMock : BaseMock<DateTime>
         {
             public static bool TryParse(
                 string s,
                 IFormatProvider provider,
                 DateTimeStyles styles,
-                out TestValueTPD result)
+                out SafeDateMock result)
             {
                 if (DateTime.TryParse(s, provider, styles, out var date))
                 {
-                    result = new TestValueTPD { Value = date };
+                    result = new SafeDateMock { Value = date };
                     return true;
                 }
 
@@ -372,13 +409,13 @@ namespace Dawn.Tests
             }
         }
 
-        private sealed class TestValueTP : TestValue<double>
+        private sealed class SafeMock : BaseMock<double>
         {
-            public static bool TryParse(string s, out TestValueTP result)
+            public static bool TryParse(string s, out SafeMock result)
             {
                 if (double.TryParse(s, out var number))
                 {
-                    result = new TestValueTP { Value = number };
+                    result = new SafeMock { Value = number };
                     return true;
                 }
 
@@ -387,10 +424,10 @@ namespace Dawn.Tests
             }
         }
 
-        [TypeConverter(typeof(TestValueTCConverter))]
-        private sealed class TestValueTC : TestValue<double>
+        [TypeConverter(typeof(TestTypeConverter))]
+        private sealed class TypeConverterMock : BaseMock<double>
         {
-            private sealed class TestValueTCConverter : TypeConverter
+            private sealed class TestTypeConverter : TypeConverter
             {
                 public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
                     => sourceType == typeof(string);
@@ -400,7 +437,7 @@ namespace Dawn.Tests
                     switch (value)
                     {
                         case string s:
-                            return new TestValueTC { Value = double.Parse(s, culture) };
+                            return new TypeConverterMock { Value = double.Parse(s, culture) };
                         default:
                             return base.ConvertFrom(context, culture, value);
                     }
@@ -408,9 +445,9 @@ namespace Dawn.Tests
             }
         }
 
-        private sealed class TestValueC : TestValue<double>
+        private sealed class ConstructorMock : BaseMock<double>
         {
-            public TestValueC(string s)
+            public ConstructorMock(string s)
                 => this.Value = double.Parse(s);
         }
 
