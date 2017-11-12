@@ -1,23 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net45;netstandard1.3;netstandard1.0</TargetFrameworks>
     <Title>Value String</Title>
     <AssemblyName>Dawn.ValueString</AssemblyName>
     <Product>Dawn Utils</Product>
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
     <FileVersion>1.0.0</FileVersion>
     <RootNamespace>Dawn</RootNamespace>
     <CodeAnalysisRuleSet>../style/global.ruleset</CodeAnalysisRuleSet>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DocumentationFile>$(OutputPath)bin/$(Configuration)/$(TargetFramework)/$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netstandard2.0\Dawn.ValueString.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard2.0\Dawn.ValueString.xml</DocumentationFile>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Properties/Key.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -38,7 +34,7 @@
     <PackageProjectUrl>https://github.com/safakgur/value-string</PackageProjectUrl>
     <Copyright>Copyright © 2016 Şafak Gür</Copyright>
     <PackageTags>string parse serialization</PackageTags>
-    <PackageReleaseNotes>Binary serialization support.</PackageReleaseNotes>
+    <PackageReleaseNotes>.NET Framework 4.5 and .NET Standard 1.0 compatibility.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/safakgur/value-string</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>

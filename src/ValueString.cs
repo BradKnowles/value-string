@@ -1,18 +1,28 @@
 ﻿// Copyright © 2016 Şafak Gür. All rights reserved.
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
+#if NETSTANDARD1_0
+#elif NETSTANDARD1_3
+#define S_XML_SERIALIZATION
+#else
+#define S_BINARY_SERIALIZATION
+#define S_XML_SERIALIZATION
+#define S_TYPE_DESCRIPTOR
+#endif
+
 namespace Dawn
 {
     using System;
     using System.Collections.Generic;
-    using System.ComponentModel;
     using System.Diagnostics;
     using System.Globalization;
     using System.Linq.Expressions;
     using System.Reflection;
+#if S_XML_SERIALIZATION
     using System.Xml;
     using System.Xml.Schema;
     using System.Xml.Serialization;
+#endif
 
     /// <summary>Represents arbitrary data as string.</summary>
     /// <remarks>
@@ -21,9 +31,16 @@ namespace Dawn
     ///     is used unless one of the overloads accepting
     ///     an <see cref="IFormatProvider" /> is used.
     /// </remarks>
+#if S_BINARY_SERIALIZATION
     [Serializable]
+#endif
     [DebuggerDisplay("{data}")]
-    public struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
+    public struct ValueString : IEquatable<ValueString>, IEquatable<string>
+#if S_XML_SERIALIZATION
+#pragma warning disable SA1001 // Commas must be spaced correctly
+        , IXmlSerializable
+#pragma warning restore SA1001 // Commas must be spaced correctly
+#endif
     {
         #region Fields
 
@@ -288,6 +305,8 @@ namespace Dawn
         /// <returns><see cref="data" />.</returns>
         public override string ToString() => this.data;
 
+#if S_XML_SERIALIZATION
+
         /// <inheritdoc />
         XmlSchema IXmlSerializable.GetSchema()
             => null;
@@ -302,6 +321,8 @@ namespace Dawn
         /// <inheritdoc />
         void IXmlSerializable.WriteXml(XmlWriter writer)
             => writer.WriteString(this.data);
+
+#endif
 
         #endregion Methods
 
@@ -706,7 +727,7 @@ namespace Dawn
             private T CompileNullableParser<T>(Type targetType, string fieldName)
             {
                 var nullableParserType = this.nullableParserType.MakeGenericType(targetType);
-                var f = Expression.Field(null, nullableParserType.GetField(fieldName));
+                var f = Expression.Field(null, nullableParserType.GetRuntimeField(fieldName));
                 var l = Expression.Lambda<Func<T>>(f, null);
                 return l.Compile()();
             }
@@ -788,11 +809,11 @@ namespace Dawn
 
                     // Search for the parsing method.
                     const string name = "Parse";
-                    var method = targetType.GetMethod(name, common.formattableParserSig);
+                    var method = targetType.GetRuntimeMethod(name, common.formattableParserSig);
                     if (method?.ReturnType == targetType && method.IsStatic)
                         return InitFunc(targetType, common.CompileFormattableParser<T>(method));
 
-                    method = targetType.GetMethod(name, common.parserSig);
+                    method = targetType.GetRuntimeMethod(name, common.parserSig);
                     if (method?.ReturnType == targetType && method.IsStatic)
                     {
                         var f = common.CompileParser<T>(method);
@@ -813,9 +834,11 @@ namespace Dawn
                     }
 
                     // Check for the TypeConverterAttribute.
-                    var converter = TypeDescriptor.GetConverter(targetType);
+#if S_TYPE_DESCRIPTOR
+                    var converter = System.ComponentModel.TypeDescriptor.GetConverter(targetType);
                     if (converter.CanConvertFrom(common.stringType))
                         return (s, provider) => (T)converter.ConvertFromString(null, provider as CultureInfo, s);
+#endif
 
                     // Search for a suitable constructor.
                     if (TryGetConstructor(targetType, common.parserSig, out var constructor))
@@ -890,28 +913,28 @@ namespace Dawn
                     var outTargetType = targetType.MakeByRefType();
 
                     var sig = common.GetAdded(common.formattableParserSig, outTargetType);
-                    var method = targetType.GetMethod(name, sig);
+                    var method = targetType.GetRuntimeMethod(name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
                             common.CompileSafeFormattableParser<T>(method, outTargetType));
 
                     sig = common.GetAdded(common.numericParserSig, outTargetType);
-                    method = targetType.GetMethod(name, sig);
+                    method = targetType.GetRuntimeMethod(name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
                             common.CompileSafeNumericParser<T>(method, targetType, outTargetType));
 
                     sig = common.GetAdded(common.dateParserSig, outTargetType);
-                    method = targetType.GetMethod(name, sig);
+                    method = targetType.GetRuntimeMethod(name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
                             common.CompileSafeDateParser<T>(method, outTargetType));
 
                     sig = common.GetAdded(common.parserSig, outTargetType);
-                    method = targetType.GetMethod(name, sig);
+                    method = targetType.GetRuntimeMethod(name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                     {
                         var f = common.CompileSafeParser<T>(method, outTargetType);
