@@ -7,6 +7,9 @@ namespace Dawn.Tests
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.Globalization;
+    using System.IO;
+    using System.Runtime.Serialization.Formatters.Binary;
+    using System.Xml.Serialization;
     using Xunit;
 
     /// <summary>
@@ -219,6 +222,40 @@ namespace Dawn.Tests
 
             // T(string) constructor.
             Test<ConstructorMock, double>(number);
+        }
+
+        /// <summary>
+        ///     Tests whether the <see cref="ValueString" />
+        ///     can be properly serialized and deserialized.
+        /// </summary>
+        [Fact(DisplayName = "ValueString is serializable.")]
+        public void ValueStringIsSerializable()
+        {
+            Test("1");
+            Test(null);
+
+            void Test(ValueString v)
+            {
+                using (var memory = new MemoryStream())
+                {
+                    // Test the XML serializer.
+                    var xmlSerializer = new XmlSerializer(typeof(ValueString));
+                    xmlSerializer.Serialize(memory, v);
+                    memory.Position = 0;
+
+                    var deserialized = (ValueString)xmlSerializer.Deserialize(memory);
+                    Assert.Equal(deserialized, v);
+                    memory.SetLength(0);
+
+                    // Test the binary formatter.
+                    var binaryFormatter = new BinaryFormatter();
+                    binaryFormatter.Serialize(memory, v);
+                    memory.Position = 0;
+
+                    deserialized = (ValueString)binaryFormatter.Deserialize(memory);
+                    Assert.Equal(deserialized, v);
+                }
+            }
         }
 
         /// <summary>

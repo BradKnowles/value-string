@@ -10,7 +10,9 @@ namespace Dawn
     using System.Globalization;
     using System.Linq.Expressions;
     using System.Reflection;
-    using System.Runtime.Serialization;
+    using System.Xml;
+    using System.Xml.Schema;
+    using System.Xml.Serialization;
 
     /// <summary>Represents arbitrary data as string.</summary>
     /// <remarks>
@@ -19,14 +21,13 @@ namespace Dawn
     ///     is used unless one of the overloads accepting
     ///     an <see cref="IFormatProvider" /> is used.
     /// </remarks>
-    [DataContract]
+    [Serializable]
     [DebuggerDisplay("{data}")]
-    public struct ValueString : IEquatable<ValueString>, IEquatable<string>
+    public struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
     {
         #region Fields
 
         /// <summary>The data.</summary>
-        [DataMember]
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string data;
 
@@ -286,6 +287,21 @@ namespace Dawn
         /// <summary>Returns the underlying string data.</summary>
         /// <returns><see cref="data" />.</returns>
         public override string ToString() => this.data;
+
+        /// <inheritdoc />
+        XmlSchema IXmlSerializable.GetSchema()
+            => null;
+
+        /// <inheritdoc />
+        void IXmlSerializable.ReadXml(XmlReader reader)
+        {
+            if (reader.Read())
+                this = new ValueString(reader.Value);
+        }
+
+        /// <inheritdoc />
+        void IXmlSerializable.WriteXml(XmlWriter writer)
+            => writer.WriteString(this.data);
 
         #endregion Methods
 
