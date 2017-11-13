@@ -257,6 +257,159 @@ namespace Dawn.Tests
         }
 
         /// <summary>
+        ///     Tests whether the <see cref="ValueString" />
+        ///     implements <see cref="IConvertible" />.
+        /// </summary>
+        [Fact(DisplayName = "ValueString is convertible.")]
+        public void ValueStringIsConvertible()
+        {
+            TestTypes(CultureInfo.InvariantCulture);
+            TestTypes(usCulture);
+            TestTypes(frCulture);
+
+            CultureInfo.CurrentCulture = usCulture;
+            TestTypes(null);
+
+            CultureInfo.CurrentCulture = frCulture;
+            TestTypes(null);
+
+            void TestTypes(IFormatProvider formatProvider)
+            {
+                TestType(
+                    true,
+                    formatProvider,
+                    c => Convert.ToBoolean(c),
+                    c => Convert.ToBoolean(c, formatProvider),
+                    c => c.ToBoolean(formatProvider));
+
+                TestType<byte>(
+                    1,
+                    formatProvider,
+                    c => Convert.ToByte(c),
+                    c => Convert.ToByte(c, formatProvider),
+                    c => c.ToByte(formatProvider));
+
+                TestType(
+                    'C',
+                    formatProvider,
+                    c => Convert.ToChar(c),
+                    c => Convert.ToChar(c, formatProvider),
+                    c => c.ToChar(formatProvider));
+
+                TestType(
+                    new DateTime(2017, 11, 13, 20, 29, 52),
+                    formatProvider,
+                    c => Convert.ToDateTime(c),
+                    c => Convert.ToDateTime(c, formatProvider),
+                    c => c.ToDateTime(formatProvider));
+
+                TestType(
+                    1M,
+                    formatProvider,
+                    c => Convert.ToDecimal(c),
+                    c => Convert.ToDecimal(c, formatProvider),
+                    c => c.ToDecimal(formatProvider));
+
+                TestType(
+                    1.1,
+                    formatProvider,
+                    c => Convert.ToDouble(c),
+                    c => Convert.ToDouble(c, formatProvider),
+                    c => c.ToDouble(formatProvider));
+
+                TestType<short>(
+                    1,
+                    formatProvider,
+                    c => Convert.ToInt16(c),
+                    c => Convert.ToInt16(c, formatProvider),
+                    c => c.ToInt16(formatProvider));
+
+                TestType(
+                    1,
+                    formatProvider,
+                    c => Convert.ToInt32(c),
+                    c => Convert.ToInt32(c, formatProvider),
+                    c => c.ToInt32(formatProvider));
+
+                TestType(
+                    1L,
+                    formatProvider,
+                    c => Convert.ToInt64(c),
+                    c => Convert.ToInt64(c, formatProvider),
+                    c => c.ToInt64(formatProvider));
+
+                TestType<sbyte>(
+                    1,
+                    formatProvider,
+                    c => Convert.ToSByte(c),
+                    c => Convert.ToSByte(c, formatProvider),
+                    c => c.ToSByte(formatProvider));
+
+                TestType(
+                    1.1F,
+                    formatProvider,
+                    c => Convert.ToSingle(c),
+                    c => Convert.ToSingle(c, formatProvider),
+                    c => c.ToSingle(formatProvider));
+
+                TestType(
+                    "C",
+                    formatProvider,
+                    c => Convert.ToString(c),
+                    c => Convert.ToString(c, formatProvider),
+                    c => c.ToString(formatProvider));
+
+                TestType<ushort>(
+                    1,
+                    formatProvider,
+                    c => Convert.ToUInt16(c),
+                    c => Convert.ToUInt16(c, formatProvider),
+                    c => c.ToUInt16(formatProvider));
+
+                TestType(
+                    1U,
+                    formatProvider,
+                    c => Convert.ToUInt32(c),
+                    c => Convert.ToUInt32(c, formatProvider),
+                    c => c.ToUInt32(formatProvider));
+
+                TestType(
+                    1UL,
+                    formatProvider,
+                    c => Convert.ToUInt64(c),
+                    c => Convert.ToUInt64(c, formatProvider),
+                    c => c.ToUInt64(formatProvider));
+            }
+
+            void TestType<T>(
+                T value,
+                IFormatProvider formatProvider,
+                Func<IConvertible, T> invariantConverter,
+                params Func<IConvertible, T>[] variantConverters)
+                where T : IEquatable<T>
+            {
+                var invV = new ValueString(value);
+                var invC = invV as IConvertible;
+                Assert.Equal(TypeCode.Object, invC.GetTypeCode());
+                Assert.Equal(value, invariantConverter(invC));
+                Assert.Equal(value, invC.ToType(typeof(T), null));
+
+                var varV = formatProvider != null
+                    ? new ValueString(value is IFormattable f ? f.ToString(null, formatProvider) : value.ToString())
+                    : invV;
+
+                var varC = varV as IConvertible;
+                Assert.Equal(TypeCode.Object, varC.GetTypeCode());
+
+                foreach (var convert in variantConverters)
+                {
+                    Assert.Equal(value, convert(varC));
+                    Assert.Equal(value, varC.ToType(typeof(T), formatProvider));
+                }
+            }
+        }
+
+        /// <summary>
         ///     Tests whether the dictionary extensions in <see cref="ValueStringUtils" />
         ///     validate their arguments.
         /// </summary>

@@ -4,11 +4,14 @@
 #if NETSTANDARD1_0
 #define S_RUNTIME_REFLECTION
 #elif NETSTANDARD1_3
+#define S_CONVERTIBLE
 #define S_RUNTIME_REFLECTION
 #elif NET35
+#define S_CONVERTIBLE
 #define S_BINARY_SERIALIZATION
 #define S_TYPE_DESCRIPTOR
 #else
+#define S_CONVERTIBLE
 #define S_BINARY_SERIALIZATION
 #define S_TYPE_DESCRIPTOR
 #define S_RUNTIME_REFLECTION
@@ -38,6 +41,9 @@ namespace Dawn
 #endif
     [DebuggerDisplay("{data}")]
     public struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
+#if S_CONVERTIBLE
+        , IConvertible
+#endif
     {
         #region Fields
 
@@ -316,6 +322,81 @@ namespace Dawn
         /// <inheritdoc />
         void IXmlSerializable.WriteXml(XmlWriter writer)
             => writer.WriteString(this.data);
+
+#if S_CONVERTIBLE
+        /// <inheritdoc />
+        TypeCode IConvertible.GetTypeCode()
+            => TypeCode.Object;
+
+        /// <inheritdoc />
+        bool IConvertible.ToBoolean(IFormatProvider provider)
+            => this.As<bool>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        byte IConvertible.ToByte(IFormatProvider provider)
+            => this.As<byte>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        char IConvertible.ToChar(IFormatProvider provider)
+            => this.As<char>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        DateTime IConvertible.ToDateTime(IFormatProvider provider)
+            => this.As<DateTime>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        decimal IConvertible.ToDecimal(IFormatProvider provider)
+            => this.As<decimal>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        double IConvertible.ToDouble(IFormatProvider provider)
+            => this.As<double>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        short IConvertible.ToInt16(IFormatProvider provider)
+            => this.As<short>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        int IConvertible.ToInt32(IFormatProvider provider)
+            => this.As<int>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        long IConvertible.ToInt64(IFormatProvider provider)
+            => this.As<long>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        sbyte IConvertible.ToSByte(IFormatProvider provider)
+            => this.As<sbyte>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        float IConvertible.ToSingle(IFormatProvider provider)
+            => this.As<float>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        string IConvertible.ToString(IFormatProvider provider)
+            => this.ToString();
+
+        /// <inheritdoc />
+        object IConvertible.ToType(Type conversionType, IFormatProvider provider)
+        {
+            var type = typeof(ValueString);
+            var providerType = typeof(IFormatProvider);
+            var method = GetMethod(type, "As", new[] { providerType }).MakeGenericMethod(conversionType);
+            return method.Invoke(this, new[] { provider ?? CultureInfo.InvariantCulture });
+        }
+
+        /// <inheritdoc />
+        ushort IConvertible.ToUInt16(IFormatProvider provider)
+            => this.As<ushort>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        uint IConvertible.ToUInt32(IFormatProvider provider)
+            => this.As<uint>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        ulong IConvertible.ToUInt64(IFormatProvider provider)
+            => this.As<ulong>(provider ?? CultureInfo.InvariantCulture);
+#endif
 
         /// <summary>Gets a type's field with the specified name.</summary>
         /// <param name="type">The type containing the field.</param>
