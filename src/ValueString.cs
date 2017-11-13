@@ -2,13 +2,22 @@
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
 #if NETSTANDARD1_0
+#define S_RUNTIME_REFLECTION
 #elif NETSTANDARD1_3
 #define S_XML_SERIALIZATION
+#define S_RUNTIME_REFLECTION
+#elif NET35
+#define S_BINARY_SERIALIZATION
+#define S_XML_SERIALIZATION
+#define S_TYPE_DESCRIPTOR
 #else
 #define S_BINARY_SERIALIZATION
 #define S_XML_SERIALIZATION
 #define S_TYPE_DESCRIPTOR
+#define S_RUNTIME_REFLECTION
 #endif
+
+#pragma warning disable SA1001 // Commas must be spaced correctly: Conditional IXmlSerializable
 
 namespace Dawn
 {
@@ -37,9 +46,7 @@ namespace Dawn
     [DebuggerDisplay("{data}")]
     public struct ValueString : IEquatable<ValueString>, IEquatable<string>
 #if S_XML_SERIALIZATION
-#pragma warning disable SA1001 // Commas must be spaced correctly
         , IXmlSerializable
-#pragma warning restore SA1001 // Commas must be spaced correctly
 #endif
     {
         #region Fields
@@ -323,6 +330,33 @@ namespace Dawn
             => writer.WriteString(this.data);
 
 #endif
+
+        /// <summary>Gets a type's field with the specified name.</summary>
+        /// <param name="type">The type containing the field.</param>
+        /// <param name="fieldName">The name of the field to find.</param>
+        /// <returns>The field info with the specified name.</returns>
+        private static FieldInfo GetField(Type type, string fieldName)
+        {
+#if S_RUNTIME_REFLECTION
+            return type.GetRuntimeField(fieldName);
+#else
+            return type.GetField(fieldName);
+#endif
+        }
+
+        /// <summary>Gets a type's method with the specified name and signature.</summary>
+        /// <param name="type">The type containing the method.</param>
+        /// <param name="methodName">The name of the method to find.</param>
+        /// <param name="parameters">The types of the method arguments.</param>
+        /// <returns>The method info with the specified name and signature.</returns>
+        private static MethodInfo GetMethod(Type type, string methodName, Type[] parameters)
+        {
+#if S_RUNTIME_REFLECTION
+            return type.GetRuntimeMethod(methodName, parameters);
+#else
+            return type.GetMethod(methodName, parameters);
+#endif
+        }
 
         #endregion Methods
 
@@ -705,12 +739,21 @@ namespace Dawn
             /// </returns>
             private bool IsNullable(Type type, out Type underlyingType)
             {
+#if S_RUNTIME_REFLECTION
                 var i = type.GetTypeInfo();
                 var n = !i.IsClass
                     && i.IsGenericType
                     && i.GetGenericTypeDefinition() == this.nullableValueType;
 
                 underlyingType = n ? type.GenericTypeArguments[0] : type;
+#else
+                var n = !type.IsClass
+                    && type.IsGenericType
+                    && type.GetGenericTypeDefinition() == this.nullableValueType;
+
+                underlyingType = n ? type.GetGenericArguments()[0] : type;
+#endif
+
                 return n;
             }
 
@@ -727,7 +770,7 @@ namespace Dawn
             private T CompileNullableParser<T>(Type targetType, string fieldName)
             {
                 var nullableParserType = this.nullableParserType.MakeGenericType(targetType);
-                var f = Expression.Field(null, nullableParserType.GetRuntimeField(fieldName));
+                var f = Expression.Field(null, GetField(nullableParserType, fieldName));
                 var l = Expression.Lambda<Func<T>>(f, null);
                 return l.Compile()();
             }
@@ -809,11 +852,11 @@ namespace Dawn
 
                     // Search for the parsing method.
                     const string name = "Parse";
-                    var method = targetType.GetRuntimeMethod(name, common.formattableParserSig);
+                    var method = GetMethod(targetType, name, common.formattableParserSig);
                     if (method?.ReturnType == targetType && method.IsStatic)
                         return InitFunc(targetType, common.CompileFormattableParser<T>(method));
 
-                    method = targetType.GetRuntimeMethod(name, common.parserSig);
+                    method = GetMethod(targetType, name, common.parserSig);
                     if (method?.ReturnType == targetType && method.IsStatic)
                     {
                         var f = common.CompileParser<T>(method);
@@ -913,28 +956,28 @@ namespace Dawn
                     var outTargetType = targetType.MakeByRefType();
 
                     var sig = common.GetAdded(common.formattableParserSig, outTargetType);
-                    var method = targetType.GetRuntimeMethod(name, sig);
+                    var method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
                             common.CompileSafeFormattableParser<T>(method, outTargetType));
 
                     sig = common.GetAdded(common.numericParserSig, outTargetType);
-                    method = targetType.GetRuntimeMethod(name, sig);
+                    method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
                             common.CompileSafeNumericParser<T>(method, targetType, outTargetType));
 
                     sig = common.GetAdded(common.dateParserSig, outTargetType);
-                    method = targetType.GetRuntimeMethod(name, sig);
+                    method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
                             common.CompileSafeDateParser<T>(method, outTargetType));
 
                     sig = common.GetAdded(common.parserSig, outTargetType);
-                    method = targetType.GetRuntimeMethod(name, sig);
+                    method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                     {
                         var f = common.CompileSafeParser<T>(method, outTargetType);
@@ -1010,7 +1053,12 @@ namespace Dawn
                 private static bool TryGetConstructor(
                     Type type, Type[] sig, out ConstructorInfo constructor)
                 {
-                    foreach (var c in type.GetTypeInfo().DeclaredConstructors)
+#if S_RUNTIME_REFLECTION
+                    var constructors = type.GetTypeInfo().DeclaredConstructors;
+#else
+                    var constructors = type.GetConstructors();
+#endif
+                    foreach (var c in constructors)
                     {
                         var parameters = c.GetParameters();
                         if (parameters.Length != common.parserSig.Length)
@@ -1126,7 +1174,7 @@ namespace Dawn
                 #region Fields
 
                 /// <summary>The custom parsers.</summary>
-                private static readonly IReadOnlyDictionary<Type, object> parsers
+                private static readonly Dictionary<Type, object> parsers
                     = InitParsers();
 
                 #endregion Fields
@@ -1163,7 +1211,7 @@ namespace Dawn
 
                 /// <summary>Initializes the custom parsers.</summary>
                 /// <returns>A collection of custom parsers.</returns>
-                private static IReadOnlyDictionary<Type, object> InitParsers()
+                private static Dictionary<Type, object> InitParsers()
                 {
                     return new Dictionary<Type, object>
                     {
@@ -1204,3 +1252,5 @@ namespace Dawn
         #endregion Classes
     }
 }
+
+#pragma warning restore SA1001 // Commas must be spaced correctly
