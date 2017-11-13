@@ -2,12 +2,29 @@
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
 #if NETSTANDARD1_0
+#define S_RUNTIME_REFLECTION
+#define S_STRING_JOIN_ENUMERABLE
 #elif NETSTANDARD1_3
-#define S_XML_SERIALIZATION
-#else
+#define S_CONVERTIBLE
+#define S_RUNTIME_REFLECTION
+#define S_STRING_JOIN_ENUMERABLE
+#elif NET35
+#define S_CONVERTIBLE
 #define S_BINARY_SERIALIZATION
-#define S_XML_SERIALIZATION
 #define S_TYPE_DESCRIPTOR
+#elif NET45
+#define S_CONVERTIBLE
+#define S_BINARY_SERIALIZATION
+#define S_TYPE_DESCRIPTOR
+#define S_RUNTIME_REFLECTION
+#define S_STRING_JOIN_ENUMERABLE
+#else
+#define S_CONVERTIBLE
+#define S_BINARY_SERIALIZATION
+#define S_TYPE_DESCRIPTOR
+#define S_RUNTIME_REFLECTION
+#define S_VALUE_TUPLES
+#define S_STRING_JOIN_ENUMERABLE
 #endif
 
 namespace Dawn
@@ -18,11 +35,10 @@ namespace Dawn
     using System.Globalization;
     using System.Linq.Expressions;
     using System.Reflection;
-#if S_XML_SERIALIZATION
+    using System.Text.RegularExpressions;
     using System.Xml;
     using System.Xml.Schema;
     using System.Xml.Serialization;
-#endif
 
     /// <summary>Represents arbitrary data as string.</summary>
     /// <remarks>
@@ -35,12 +51,12 @@ namespace Dawn
     [Serializable]
 #endif
     [DebuggerDisplay("{data}")]
-    public struct ValueString : IEquatable<ValueString>, IEquatable<string>
-#if S_XML_SERIALIZATION
+    public struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
 #pragma warning disable SA1001 // Commas must be spaced correctly
-        , IXmlSerializable
-#pragma warning restore SA1001 // Commas must be spaced correctly
+#if S_CONVERTIBLE
+        , IConvertible
 #endif
+#pragma warning restore SA1001 // Commas must be spaced correctly
     {
         #region Fields
 
@@ -224,6 +240,63 @@ namespace Dawn
                 && EqualityComparer<T>.Default.Equals(result, other);
         }
 
+#pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
+#pragma warning disable SA1009 // Closing parenthesis must be spaced correctly
+#pragma warning disable SA1111 // Closing parenthesis must be on line of last parameter
+
+        /// <summary>
+        ///     Finds the specified keys and replace
+        ///     them with their respective values.
+        /// </summary>
+        /// <param name="values">The key/value pairs to find and replace.</param>
+        /// <returns>The formatted <see cref="data" />.</returns>
+        /// <exception cref="ArgumentException">
+        ///     <paramref name="values" /> contains an item with a
+        ///     <c>null</c> key or multiple items with the same key.
+        /// </exception>
+        public string Format(
+#if S_VALUE_TUPLES
+            params (string Key, string Value)[] values
+#else
+            params KeyValuePair<string, string>[] values
+#endif
+            )
+        {
+            if (values == null || values.Length == 0)
+                return this.data;
+
+            var replacements = new Dictionary<string, string>(values.Length);
+            for (var i = 0; i < values.Length; i++)
+            {
+                var pair = values[i];
+                try
+                {
+                    replacements.Add(Regex.Escape(pair.Key), pair.Value ?? string.Empty);
+                }
+                catch (ArgumentNullException x)
+                {
+                    var m = "Values cannot contain pairs with null keys.";
+                    throw new ArgumentException(m, nameof(values), x);
+                }
+                catch (ArgumentException x)
+                {
+                    var m = "Values cannot contain pairs with duplicate keys.";
+                    throw new ArgumentException(m, nameof(values), x);
+                }
+            }
+
+#if S_STRING_JOIN_ENUMERABLE
+            var keys = string.Join("|", replacements.Keys);
+#else
+            var keys = string.Join("|", System.Linq.Enumerable.ToArray(replacements.Keys));
+#endif
+            return new Regex($"({keys})").Replace(this.data, m => replacements[m.Value]);
+        }
+
+#pragma warning restore SA1111 // Closing parenthesis must be on line of last parameter
+#pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
+#pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
+
         /// <summary>
         ///     Determines whether the specified value string is equal
         ///     to this instance. A parameter specifies the culture,
@@ -305,8 +378,6 @@ namespace Dawn
         /// <returns><see cref="data" />.</returns>
         public override string ToString() => this.data;
 
-#if S_XML_SERIALIZATION
-
         /// <inheritdoc />
         XmlSchema IXmlSerializable.GetSchema()
             => null;
@@ -322,7 +393,107 @@ namespace Dawn
         void IXmlSerializable.WriteXml(XmlWriter writer)
             => writer.WriteString(this.data);
 
+#if S_CONVERTIBLE
+        /// <inheritdoc />
+        TypeCode IConvertible.GetTypeCode()
+            => TypeCode.Object;
+
+        /// <inheritdoc />
+        bool IConvertible.ToBoolean(IFormatProvider provider)
+            => this.As<bool>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        byte IConvertible.ToByte(IFormatProvider provider)
+            => this.As<byte>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        char IConvertible.ToChar(IFormatProvider provider)
+            => this.As<char>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        DateTime IConvertible.ToDateTime(IFormatProvider provider)
+            => this.As<DateTime>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        decimal IConvertible.ToDecimal(IFormatProvider provider)
+            => this.As<decimal>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        double IConvertible.ToDouble(IFormatProvider provider)
+            => this.As<double>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        short IConvertible.ToInt16(IFormatProvider provider)
+            => this.As<short>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        int IConvertible.ToInt32(IFormatProvider provider)
+            => this.As<int>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        long IConvertible.ToInt64(IFormatProvider provider)
+            => this.As<long>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        sbyte IConvertible.ToSByte(IFormatProvider provider)
+            => this.As<sbyte>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        float IConvertible.ToSingle(IFormatProvider provider)
+            => this.As<float>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        string IConvertible.ToString(IFormatProvider provider)
+            => this.ToString();
+
+        /// <inheritdoc />
+        object IConvertible.ToType(Type conversionType, IFormatProvider provider)
+        {
+            var type = typeof(ValueString);
+            var providerType = typeof(IFormatProvider);
+            var method = GetMethod(type, "As", new[] { providerType }).MakeGenericMethod(conversionType);
+            return method.Invoke(this, new[] { provider ?? CultureInfo.InvariantCulture });
+        }
+
+        /// <inheritdoc />
+        ushort IConvertible.ToUInt16(IFormatProvider provider)
+            => this.As<ushort>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        uint IConvertible.ToUInt32(IFormatProvider provider)
+            => this.As<uint>(provider ?? CultureInfo.InvariantCulture);
+
+        /// <inheritdoc />
+        ulong IConvertible.ToUInt64(IFormatProvider provider)
+            => this.As<ulong>(provider ?? CultureInfo.InvariantCulture);
 #endif
+
+        /// <summary>Gets a type's field with the specified name.</summary>
+        /// <param name="type">The type containing the field.</param>
+        /// <param name="fieldName">The name of the field to find.</param>
+        /// <returns>The field info with the specified name.</returns>
+        private static FieldInfo GetField(Type type, string fieldName)
+        {
+#if S_RUNTIME_REFLECTION
+            return type.GetRuntimeField(fieldName);
+#else
+            return type.GetField(fieldName);
+#endif
+        }
+
+        /// <summary>Gets a type's method with the specified name and signature.</summary>
+        /// <param name="type">The type containing the method.</param>
+        /// <param name="methodName">The name of the method to find.</param>
+        /// <param name="parameters">The types of the method arguments.</param>
+        /// <returns>The method info with the specified name and signature.</returns>
+        private static MethodInfo GetMethod(Type type, string methodName, Type[] parameters)
+        {
+#if S_RUNTIME_REFLECTION
+            return type.GetRuntimeMethod(methodName, parameters);
+#else
+            return type.GetMethod(methodName, parameters);
+#endif
+        }
 
         #endregion Methods
 
@@ -705,12 +876,21 @@ namespace Dawn
             /// </returns>
             private bool IsNullable(Type type, out Type underlyingType)
             {
+#if S_RUNTIME_REFLECTION
                 var i = type.GetTypeInfo();
                 var n = !i.IsClass
                     && i.IsGenericType
                     && i.GetGenericTypeDefinition() == this.nullableValueType;
 
                 underlyingType = n ? type.GenericTypeArguments[0] : type;
+#else
+                var n = !type.IsClass
+                    && type.IsGenericType
+                    && type.GetGenericTypeDefinition() == this.nullableValueType;
+
+                underlyingType = n ? type.GetGenericArguments()[0] : type;
+#endif
+
                 return n;
             }
 
@@ -727,7 +907,7 @@ namespace Dawn
             private T CompileNullableParser<T>(Type targetType, string fieldName)
             {
                 var nullableParserType = this.nullableParserType.MakeGenericType(targetType);
-                var f = Expression.Field(null, nullableParserType.GetRuntimeField(fieldName));
+                var f = Expression.Field(null, GetField(nullableParserType, fieldName));
                 var l = Expression.Lambda<Func<T>>(f, null);
                 return l.Compile()();
             }
@@ -809,11 +989,11 @@ namespace Dawn
 
                     // Search for the parsing method.
                     const string name = "Parse";
-                    var method = targetType.GetRuntimeMethod(name, common.formattableParserSig);
+                    var method = GetMethod(targetType, name, common.formattableParserSig);
                     if (method?.ReturnType == targetType && method.IsStatic)
                         return InitFunc(targetType, common.CompileFormattableParser<T>(method));
 
-                    method = targetType.GetRuntimeMethod(name, common.parserSig);
+                    method = GetMethod(targetType, name, common.parserSig);
                     if (method?.ReturnType == targetType && method.IsStatic)
                     {
                         var f = common.CompileParser<T>(method);
@@ -913,28 +1093,28 @@ namespace Dawn
                     var outTargetType = targetType.MakeByRefType();
 
                     var sig = common.GetAdded(common.formattableParserSig, outTargetType);
-                    var method = targetType.GetRuntimeMethod(name, sig);
+                    var method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
                             common.CompileSafeFormattableParser<T>(method, outTargetType));
 
                     sig = common.GetAdded(common.numericParserSig, outTargetType);
-                    method = targetType.GetRuntimeMethod(name, sig);
+                    method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
                             common.CompileSafeNumericParser<T>(method, targetType, outTargetType));
 
                     sig = common.GetAdded(common.dateParserSig, outTargetType);
-                    method = targetType.GetRuntimeMethod(name, sig);
+                    method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                         return InitTryFunc(
                             targetType,
                             common.CompileSafeDateParser<T>(method, outTargetType));
 
                     sig = common.GetAdded(common.parserSig, outTargetType);
-                    method = targetType.GetRuntimeMethod(name, sig);
+                    method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                     {
                         var f = common.CompileSafeParser<T>(method, outTargetType);
@@ -1010,7 +1190,12 @@ namespace Dawn
                 private static bool TryGetConstructor(
                     Type type, Type[] sig, out ConstructorInfo constructor)
                 {
-                    foreach (var c in type.GetTypeInfo().DeclaredConstructors)
+#if S_RUNTIME_REFLECTION
+                    var constructors = type.GetTypeInfo().DeclaredConstructors;
+#else
+                    var constructors = type.GetConstructors();
+#endif
+                    foreach (var c in constructors)
                     {
                         var parameters = c.GetParameters();
                         if (parameters.Length != common.parserSig.Length)
@@ -1126,7 +1311,7 @@ namespace Dawn
                 #region Fields
 
                 /// <summary>The custom parsers.</summary>
-                private static readonly IReadOnlyDictionary<Type, object> parsers
+                private static readonly Dictionary<Type, object> parsers
                     = InitParsers();
 
                 #endregion Fields
@@ -1163,7 +1348,7 @@ namespace Dawn
 
                 /// <summary>Initializes the custom parsers.</summary>
                 /// <returns>A collection of custom parsers.</returns>
-                private static IReadOnlyDictionary<Type, object> InitParsers()
+                private static Dictionary<Type, object> InitParsers()
                 {
                     return new Dictionary<Type, object>
                     {
