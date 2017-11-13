@@ -4,20 +4,15 @@
 #if NETSTANDARD1_0
 #define S_RUNTIME_REFLECTION
 #elif NETSTANDARD1_3
-#define S_XML_SERIALIZATION
 #define S_RUNTIME_REFLECTION
 #elif NET35
 #define S_BINARY_SERIALIZATION
-#define S_XML_SERIALIZATION
 #define S_TYPE_DESCRIPTOR
 #else
 #define S_BINARY_SERIALIZATION
-#define S_XML_SERIALIZATION
 #define S_TYPE_DESCRIPTOR
 #define S_RUNTIME_REFLECTION
 #endif
-
-#pragma warning disable SA1001 // Commas must be spaced correctly: Conditional IXmlSerializable
 
 namespace Dawn
 {
@@ -27,11 +22,9 @@ namespace Dawn
     using System.Globalization;
     using System.Linq.Expressions;
     using System.Reflection;
-#if S_XML_SERIALIZATION
     using System.Xml;
     using System.Xml.Schema;
     using System.Xml.Serialization;
-#endif
 
     /// <summary>Represents arbitrary data as string.</summary>
     /// <remarks>
@@ -44,10 +37,7 @@ namespace Dawn
     [Serializable]
 #endif
     [DebuggerDisplay("{data}")]
-    public struct ValueString : IEquatable<ValueString>, IEquatable<string>
-#if S_XML_SERIALIZATION
-        , IXmlSerializable
-#endif
+    public struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
     {
         #region Fields
 
@@ -312,8 +302,6 @@ namespace Dawn
         /// <returns><see cref="data" />.</returns>
         public override string ToString() => this.data;
 
-#if S_XML_SERIALIZATION
-
         /// <inheritdoc />
         XmlSchema IXmlSerializable.GetSchema()
             => null;
@@ -328,8 +316,6 @@ namespace Dawn
         /// <inheritdoc />
         void IXmlSerializable.WriteXml(XmlWriter writer)
             => writer.WriteString(this.data);
-
-#endif
 
         /// <summary>Gets a type's field with the specified name.</summary>
         /// <param name="type">The type containing the field.</param>
@@ -1252,5 +1238,3 @@ namespace Dawn
         #endregion Classes
     }
 }
-
-#pragma warning restore SA1001 // Commas must be spaced correctly
