@@ -465,6 +465,25 @@ namespace Dawn.Tests
         }
 
         /// <summary>
+        ///     Tests whether the <see cref="ValueString.Format" />
+        ///     method works properly.
+        /// </summary>
+        [Fact(DisplayName = "ValueString can be formatted.")]
+        public void ValueStringCanBeFormatted()
+        {
+#pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
+
+            var v = new ValueString("foo bar baz");
+            Assert.Throws<ArgumentException>("values", () => v.Format(("foo", "bar"), (null, "baz"))); // Null key.
+            Assert.Throws<ArgumentException>("values", () => v.Format(("foo", "bar"), ("foo", "baz"))); // Duplicate key.
+
+            var s = v.Format(("foo", "bar"), ("bar", "baz"), ("baz", "foo"));
+            Assert.Equal("bar baz foo", s);
+
+#pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
+        }
+
+        /// <summary>
         ///     Tests whether the specified type can be initialized from string.
         /// </summary>
         /// <typeparam name="TTarget">Type to initialize from string.</typeparam>

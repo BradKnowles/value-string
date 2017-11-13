@@ -3,18 +3,28 @@
 
 #if NETSTANDARD1_0
 #define S_RUNTIME_REFLECTION
+#define S_STRING_JOIN_ENUMERABLE
 #elif NETSTANDARD1_3
 #define S_CONVERTIBLE
 #define S_RUNTIME_REFLECTION
+#define S_STRING_JOIN_ENUMERABLE
 #elif NET35
 #define S_CONVERTIBLE
 #define S_BINARY_SERIALIZATION
 #define S_TYPE_DESCRIPTOR
+#elif NET45
+#define S_CONVERTIBLE
+#define S_BINARY_SERIALIZATION
+#define S_TYPE_DESCRIPTOR
+#define S_RUNTIME_REFLECTION
+#define S_STRING_JOIN_ENUMERABLE
 #else
 #define S_CONVERTIBLE
 #define S_BINARY_SERIALIZATION
 #define S_TYPE_DESCRIPTOR
 #define S_RUNTIME_REFLECTION
+#define S_VALUE_TUPLES
+#define S_STRING_JOIN_ENUMERABLE
 #endif
 
 namespace Dawn
@@ -25,6 +35,7 @@ namespace Dawn
     using System.Globalization;
     using System.Linq.Expressions;
     using System.Reflection;
+    using System.Text.RegularExpressions;
     using System.Xml;
     using System.Xml.Schema;
     using System.Xml.Serialization;
@@ -41,9 +52,11 @@ namespace Dawn
 #endif
     [DebuggerDisplay("{data}")]
     public struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
+#pragma warning disable SA1001 // Commas must be spaced correctly
 #if S_CONVERTIBLE
         , IConvertible
 #endif
+#pragma warning restore SA1001 // Commas must be spaced correctly
     {
         #region Fields
 
@@ -226,6 +239,63 @@ namespace Dawn
             return this.Is(provider, out T result)
                 && EqualityComparer<T>.Default.Equals(result, other);
         }
+
+#pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
+#pragma warning disable SA1009 // Closing parenthesis must be spaced correctly
+#pragma warning disable SA1111 // Closing parenthesis must be on line of last parameter
+
+        /// <summary>
+        ///     Finds the specified keys and replace
+        ///     them with their respective values.
+        /// </summary>
+        /// <param name="values">The key/value pairs to find and replace.</param>
+        /// <returns>The formatted <see cref="data" />.</returns>
+        /// <exception cref="ArgumentException">
+        ///     <paramref name="values" /> contains an item with a
+        ///     <c>null</c> key or multiple items with the same key.
+        /// </exception>
+        public string Format(
+#if S_VALUE_TUPLES
+            params (string Key, string Value)[] values
+#else
+            params KeyValuePair<string, string>[] values
+#endif
+            )
+        {
+            if (values == null || values.Length == 0)
+                return this.data;
+
+            var replacements = new Dictionary<string, string>(values.Length);
+            for (var i = 0; i < values.Length; i++)
+            {
+                var pair = values[i];
+                try
+                {
+                    replacements.Add(Regex.Escape(pair.Key), pair.Value ?? string.Empty);
+                }
+                catch (ArgumentNullException x)
+                {
+                    var m = "Values cannot contain pairs with null keys.";
+                    throw new ArgumentException(m, nameof(values), x);
+                }
+                catch (ArgumentException x)
+                {
+                    var m = "Values cannot contain pairs with duplicate keys.";
+                    throw new ArgumentException(m, nameof(values), x);
+                }
+            }
+
+#if S_STRING_JOIN_ENUMERABLE
+            var keys = string.Join("|", replacements.Keys);
+#else
+            var keys = string.Join("|", System.Linq.Enumerable.ToArray(replacements.Keys));
+#endif
+            return new Regex($"({keys})").Replace(this.data, m => replacements[m.Value]);
+        }
+
+#pragma warning restore SA1111 // Closing parenthesis must be on line of last parameter
+#pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
+#pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
 
         /// <summary>
         ///     Determines whether the specified value string is equal
