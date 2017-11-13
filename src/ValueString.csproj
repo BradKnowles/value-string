@@ -5,7 +5,7 @@
     <Title>Value String</Title>
     <AssemblyName>Dawn.ValueString</AssemblyName>
     <Product>Dawn Utils</Product>
-    <Version>1.2.2</Version>
+    <Version>1.3.0</Version>
     <FileVersion>1.0.0</FileVersion>
     <RootNamespace>Dawn</RootNamespace>
     <CodeAnalysisRuleSet>../style/global.ruleset</CodeAnalysisRuleSet>
@@ -38,7 +38,12 @@
     <PackageProjectUrl>https://github.com/safakgur/value-string</PackageProjectUrl>
     <Copyright>Copyright © 2016 Şafak Gür</Copyright>
     <PackageTags>string parse serialization</PackageTags>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageReleaseNotes>
+      * .NET Framework 3.5 support.
+      * XML serialization support on .NET Standard 1.0
+      * IConvertible support.
+      * ValueString.Format method.
+    </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/safakgur/value-string</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
