@@ -6,8 +6,6 @@
 #define S_READONLY_DICTIONARY
 #endif
 
-#pragma warning disable SA1115 // Parameter must follow comma: Conditional IReadOnlyDictionary
-
 namespace Dawn
 {
     using System;
@@ -179,5 +177,3 @@ namespace Dawn
         #endregion Methods
     }
 }
-
-#pragma warning restore SA1115 // Parameter must follow comma
