@@ -35,6 +35,9 @@ namespace Dawn
     using System.Globalization;
     using System.Linq.Expressions;
     using System.Reflection;
+#if S_BINARY_SERIALIZATION
+    using System.Runtime.Serialization;
+#endif
     using System.Text.RegularExpressions;
     using System.Xml;
     using System.Xml.Schema;
@@ -52,17 +55,18 @@ namespace Dawn
 #endif
     [DebuggerDisplay("{data}")]
     public struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
-#pragma warning disable SA1001 // Commas must be spaced correctly
+#if S_BINARY_SERIALIZATION
+        , ISerializable
+#endif
 #if S_CONVERTIBLE
         , IConvertible
 #endif
-#pragma warning restore SA1001 // Commas must be spaced correctly
     {
         #region Fields
 
-        /// <summary>The data.</summary>
+        /// <summary>The serialized data.</summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string data;
+        private readonly string value; // Do not rename. ISerializable implementation uses the name of this field.
 
         #endregion Fields
 
@@ -78,10 +82,21 @@ namespace Dawn
         /// </remarks>
         public ValueString(object data)
         {
-            this.data = data is IFormattable f
+            this.value = data is IFormattable f
                 ? f.ToString(null, CultureInfo.InvariantCulture)
                 : data?.ToString();
         }
+
+#if S_BINARY_SERIALIZATION
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ValueString" /> struct
+        ///     using the specified deserialization context.
+        /// </summary>
+        /// <param name="info">The data needed to serialize the value string.</param>
+        /// <param name="context">The streaming context.</param>
+        private ValueString(SerializationInfo info, StreamingContext context)
+            => this.value = info.GetString(nameof(this.value));
+#endif
 
         #endregion Constructors
 
@@ -145,7 +160,7 @@ namespace Dawn
         {
             try
             {
-                return Parser.DefaultParser<T>.Func(this.data, provider);
+                return Parser.DefaultParser<T>.Func(this.value, provider);
             }
             catch (Exception x)
             when (!(x is InvalidCastException))
@@ -193,7 +208,7 @@ namespace Dawn
         ///     otherwise, <c>false</c>.
         /// </returns>
         public bool Is<T>(IFormatProvider provider, out T result)
-            => Parser.DefaultParser<T>.TryFunc(this.data, provider, out result);
+            => Parser.DefaultParser<T>.TryFunc(this.value, provider, out result);
 
         /// <summary>Gets the underlying string data of the value.</summary>
         /// <param name="result">
@@ -203,7 +218,7 @@ namespace Dawn
         /// <returns><c>true</c>.</returns>
         public bool Is(out string result)
         {
-            result = this.data;
+            result = this.value;
             return true;
         }
 
@@ -240,16 +255,12 @@ namespace Dawn
                 && EqualityComparer<T>.Default.Equals(result, other);
         }
 
-#pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
-#pragma warning disable SA1009 // Closing parenthesis must be spaced correctly
-#pragma warning disable SA1111 // Closing parenthesis must be on line of last parameter
-
         /// <summary>
         ///     Finds the specified keys and replace
         ///     them with their respective values.
         /// </summary>
         /// <param name="values">The key/value pairs to find and replace.</param>
-        /// <returns>The formatted <see cref="data" />.</returns>
+        /// <returns>The formatted <see cref="value" />.</returns>
         /// <exception cref="ArgumentException">
         ///     <paramref name="values" /> contains an item with a
         ///     <c>null</c> key or multiple items with the same key.
@@ -263,7 +274,7 @@ namespace Dawn
             )
         {
             if (values == null || values.Length == 0)
-                return this.data;
+                return this.value;
 
             var replacements = new Dictionary<string, string>(values.Length);
             for (var i = 0; i < values.Length; i++)
@@ -290,12 +301,8 @@ namespace Dawn
 #else
             var keys = string.Join("|", System.Linq.Enumerable.ToArray(replacements.Keys));
 #endif
-            return new Regex($"({keys})").Replace(this.data, m => replacements[m.Value]);
+            return new Regex($"({keys})").Replace(this.value, m => replacements[m.Value]);
         }
-
-#pragma warning restore SA1111 // Closing parenthesis must be on line of last parameter
-#pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
-#pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
 
         /// <summary>
         ///     Determines whether the specified value string is equal
@@ -313,8 +320,8 @@ namespace Dawn
         /// </returns>
         public bool Equals(ValueString other, StringComparison comparison)
         {
-            return ReferenceEquals(this.data, other.data)
-                || (this.data?.Equals(other.data, comparison) ?? false);
+            return ReferenceEquals(this.value, other.value)
+                || (this.value?.Equals(other.value, comparison) ?? false);
         }
 
         /// <summary>
@@ -330,7 +337,7 @@ namespace Dawn
         ///     This method performs an ordinal (case-sensitive
         ///     and culture-insensitive) comparison.
         /// </remarks>
-        public bool Equals(ValueString other) => this.data == other.data;
+        public bool Equals(ValueString other) => this.value == other.value;
 
         /// <summary>
         ///     Determines whether the specified string is equal to this instance.
@@ -362,7 +369,7 @@ namespace Dawn
         public override bool Equals(object obj)
         {
             if (obj == null)
-                return this.data == null;
+                return this.value == null;
 
             if (obj is string s)
                 return this.Equals(s);
@@ -372,15 +379,20 @@ namespace Dawn
 
         /// <summary>Returns the hash code for this instance.</summary>
         /// <returns>A 32-bit signed integer hash code.</returns>
-        public override int GetHashCode() => this.data?.GetHashCode() ?? 0;
+        public override int GetHashCode() => this.value?.GetHashCode() ?? 0;
 
         /// <summary>Returns the underlying string data.</summary>
-        /// <returns><see cref="data" />.</returns>
-        public override string ToString() => this.data;
+        /// <returns><see cref="value" />.</returns>
+        public override string ToString() => this.value;
+
+#if S_BINARY_SERIALIZATION
+        /// <inheritdoc />
+        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
+            => info.AddValue(nameof(this.value), this.value);
+#endif
 
         /// <inheritdoc />
-        XmlSchema IXmlSerializable.GetSchema()
-            => null;
+        XmlSchema IXmlSerializable.GetSchema() => null;
 
         /// <inheritdoc />
         void IXmlSerializable.ReadXml(XmlReader reader)
@@ -391,7 +403,7 @@ namespace Dawn
 
         /// <inheritdoc />
         void IXmlSerializable.WriteXml(XmlWriter writer)
-            => writer.WriteString(this.data);
+            => writer.WriteString(this.value);
 
 #if S_CONVERTIBLE
         /// <inheritdoc />

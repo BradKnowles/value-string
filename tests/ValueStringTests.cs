@@ -8,8 +8,11 @@ namespace Dawn.Tests
     using System.ComponentModel;
     using System.Globalization;
     using System.IO;
+    using System.Runtime.Serialization;
     using System.Runtime.Serialization.Formatters.Binary;
+    using System.Runtime.Serialization.Json;
     using System.Xml.Serialization;
+    using Newtonsoft.Json;
     using Xunit;
 
     /// <summary>
@@ -234,16 +237,40 @@ namespace Dawn.Tests
 
             void Test(ValueString v)
             {
+                var type = typeof(ValueString);
                 using (var memory = new MemoryStream())
                 {
                     // Test the XML serializer.
-                    var xmlSerializer = new XmlSerializer(typeof(ValueString));
+                    var xmlSerializer = new XmlSerializer(type);
                     xmlSerializer.Serialize(memory, v);
                     memory.Position = 0;
 
                     var deserialized = (ValueString)xmlSerializer.Deserialize(memory);
                     Assert.Equal(deserialized, v);
                     memory.SetLength(0);
+
+                    // Test the data contract serializer (XML).
+                    var xmlContractSerializer = new DataContractSerializer(type);
+                    xmlContractSerializer.WriteObject(memory, v);
+                    memory.Position = 0;
+
+                    deserialized = (ValueString)xmlContractSerializer.ReadObject(memory);
+                    Assert.Equal(deserialized, v);
+                    memory.SetLength(0);
+
+                    // Test the data contract serializer (JSON)
+                    var jsonContractSerializer = new DataContractJsonSerializer(type);
+                    jsonContractSerializer.WriteObject(memory, v);
+                    memory.Position = 0;
+
+                    deserialized = (ValueString)jsonContractSerializer.ReadObject(memory);
+                    Assert.Equal(deserialized, v);
+                    memory.SetLength(0);
+
+                    // Test the JSON.NET serializer.
+                    var serialized = JsonConvert.SerializeObject(v);
+                    deserialized = JsonConvert.DeserializeObject<ValueString>(serialized);
+                    Assert.Equal(deserialized, v);
 
                     // Test the binary formatter.
                     var binaryFormatter = new BinaryFormatter();
@@ -471,16 +498,12 @@ namespace Dawn.Tests
         [Fact(DisplayName = "ValueString can be formatted.")]
         public void ValueStringCanBeFormatted()
         {
-#pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
-
             var v = new ValueString("foo bar baz");
             Assert.Throws<ArgumentException>("values", () => v.Format(("foo", "bar"), (null, "baz"))); // Null key.
             Assert.Throws<ArgumentException>("values", () => v.Format(("foo", "bar"), ("foo", "baz"))); // Duplicate key.
 
             var s = v.Format(("foo", "bar"), ("bar", "baz"), ("baz", "foo"));
             Assert.Equal("bar baz foo", s);
-
-#pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
         }
 
         /// <summary>

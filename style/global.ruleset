@@ -70,5 +70,10 @@
     <Rule Id="SA1311" Action="None" /> <!-- All private field names (static-readonly included) must be in camelCase. -->
     <Rule Id="SA1503" Action="None" /> <!-- Braces can be omitted if followed by a blank line. -->
     <Rule Id="SA1519" Action="None" /> <!-- Same as SA1503. -->
+    <Rule Id="SA1001" Action="None" /> <!-- Necessary to implement interfaces based on compilation symbols -->
+    <Rule Id="SA1008" Action="None" /> <!-- Necessary to vary method arguments by compilation symbols and also to support c#7 tuples. -->
+    <Rule Id="SA1009" Action="None" /> <!-- Same as SA1008. -->
+    <Rule Id="SA1111" Action="None" /> <!-- Same as SA1008. -->
+    <Rule Id="SA1115" Action="None" /> <!-- Same as SA1008. -->
   </Rules>
 </RuleSet>
