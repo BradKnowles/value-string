@@ -53,7 +53,7 @@ namespace Dawn
 #if S_BINARY_SERIALIZATION
     [Serializable]
 #endif
-    [DebuggerDisplay("{data}")]
+    [DebuggerDisplay("{" + nameof(value) + "}")]
     public struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
 #if S_BINARY_SERIALIZATION
         , ISerializable
