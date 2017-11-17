@@ -31,6 +31,37 @@ namespace Dawn.Tests
 
         #endregion Fields
 
+        #region Enums
+
+        /// <summary>Enum to test serializing and deserializing enums.</summary>
+        private enum TestEnum
+        {
+            /// <summary>Parsing failed.</summary>
+            NotParsed = 0,
+
+            /// <summary>Parsing succeeded.</summary>
+            Parsed = 1
+        }
+
+        /// <summary>Flag enum to test serializing and deserializing enums.</summary>
+        [Flags]
+        private enum TestFlagEnum
+        {
+            /// <summary>No color.</summary>
+            None = 0,
+
+            /// <summary>The red color.</summary>
+            Red = 1,
+
+            /// <summary>The green color.</summary>
+            Green = 2,
+
+            /// <summary>The blue color.</summary>
+            Blue = 4
+        }
+
+        #endregion Enums
+
         #region Methods
 
         /// <summary>
@@ -223,6 +254,34 @@ namespace Dawn.Tests
 
             // T(string) constructor.
             Test<ConstructorMock, double>(number);
+        }
+
+        /// <summary>
+        ///     Tests whether the <see cref="ValueString" />
+        ///     supports serializing and deserializing enums.
+        /// </summary>
+        [Fact(DisplayName = "ValueString supports enums.")]
+        public void ValueStringSupportsEnums()
+        {
+            var e = TestEnum.Parsed;
+            var v = new ValueString(e);
+            Assert.Equal("Parsed", v.ToString());
+            Assert.Equal(e, v.As<TestEnum>());
+
+            var i = (int)e;
+            v = new ValueString(i);
+            Assert.Equal(i, v.As<int>());
+            Assert.Equal(e, v.As<TestEnum>());
+
+            var f = TestFlagEnum.Red | TestFlagEnum.Blue;
+            v = new ValueString(f);
+            Assert.Equal("Red, Blue", v.ToString());
+            Assert.Equal(f, v.As<TestFlagEnum>());
+
+            i = (int)f;
+            v = new ValueString(i);
+            Assert.Equal(i, v.As<int>());
+            Assert.Equal(f, v.As<TestFlagEnum>());
         }
 
         /// <summary>
