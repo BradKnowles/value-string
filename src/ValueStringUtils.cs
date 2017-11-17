@@ -1,8 +1,7 @@
 ﻿// Copyright © 2016 Şafak Gür. All rights reserved.
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
-#if NET35
-#else
+#if !NET35
 #define S_READONLY_DICTIONARY
 #endif
 
@@ -104,7 +103,7 @@ namespace Dawn
                 throw new ArgumentNullException(nameof(source));
             }
 
-            value = default(TValue);
+            value = default;
             return false;
         }
 

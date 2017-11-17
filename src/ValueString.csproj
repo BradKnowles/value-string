@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <LangVersion>7.1</LangVersion>
     <TargetFrameworks>netstandard2.0;netstandard1.3;netstandard1.0;net45;net35</TargetFrameworks>
     <Title>Value String</Title>
     <AssemblyName>Dawn.ValueString</AssemblyName>
     <Product>Dawn Utils</Product>
-    <Version>1.3.1</Version>
+    <Version>1.3.2</Version>
     <FileVersion>1.0.0</FileVersion>
     <RootNamespace>Dawn</RootNamespace>
     <CodeAnalysisRuleSet>../style/global.ruleset</CodeAnalysisRuleSet>
@@ -38,7 +39,7 @@
     <PackageProjectUrl>https://github.com/safakgur/value-string</PackageProjectUrl>
     <Copyright>Copyright © 2016 Şafak Gür</Copyright>
     <PackageTags>string parse serialization</PackageTags>
-    <PackageReleaseNotes>Implemented ISerializable. This also fixes serialization via JSON.NET on the relevant targets.</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixed how the value strings are displayed in the debugger variable windows.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/safakgur/value-string</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>

@@ -53,7 +53,7 @@ namespace Dawn
 #if S_BINARY_SERIALIZATION
     [Serializable]
 #endif
-    [DebuggerDisplay("{data}")]
+    [DebuggerDisplay("{" + nameof(value) + "}")]
     public struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
 #if S_BINARY_SERIALIZATION
         , ISerializable
@@ -1158,7 +1158,7 @@ namespace Dawn
                     // Return a failure parser.
                     return InitTryFunc(targetType, (string s, IFormatProvider provider, out T result) =>
                     {
-                        result = default(T);
+                        result = default;
                         return false;
                     });
                 }
@@ -1277,7 +1277,7 @@ namespace Dawn
                 {
                     var f = DefaultParser<T>.Func;
                     if (f != null)
-                        return (s, provider) => s != null ? f(s, provider) : default(T?);
+                        return (s, provider) => s != null ? f(s, provider) : default;
 
                     return null;
                 }
@@ -1299,7 +1299,7 @@ namespace Dawn
                     {
                         if (s == null)
                         {
-                            result = default(T?);
+                            result = default;
                             return true;
                         }
 
@@ -1309,7 +1309,7 @@ namespace Dawn
                             return true;
                         }
 
-                        result = default(T?);
+                        result = default;
                         return false;
                     };
                 }
@@ -1383,7 +1383,7 @@ namespace Dawn
                                     }
                                 }
 
-                                result = false; // i.e. default(bool)
+                                result = default;
                                 return false;
                             }),
                         [typeof(Uri)] = new TPF<Uri>(
