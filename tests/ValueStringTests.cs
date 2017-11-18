@@ -100,6 +100,7 @@ namespace Dawn.Tests
             Assert.Equal(time, parsed);
 
             var invariant = new ValueString(time);
+            Assert.Equal(invariant, ValueString.Of(time));
             Assert.Equal("11/28/2016 22:59:58", invariant.ToString());
             Assert.Throws<InvalidCastException>(() => invariant.As<DateTime>(frCulture));
             Assert.Equal(time, invariant.As<DateTime>());

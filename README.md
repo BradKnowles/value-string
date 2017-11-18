@@ -40,6 +40,10 @@ value = new ValueString("1.1.1.1");
 if (value.Is(out IPAddress address)) // Calls IPAddress.TryParse.
     Console.WriteLine("The IP address is: {0}", address);
 
+// If your value is a struct that implements IFormattable, you can avoid
+// boxing by initializing the ValueString using the ValueString.Of method.
+value = ValueString.Of(1.5);
+
 // An implicit operator exists converting strings to ValueString instances.
 value = "1.5";
 ```

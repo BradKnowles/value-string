@@ -81,6 +81,12 @@ namespace Dawn
                 : value?.ToString();
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ValueString" /> struct.
+        /// </summary>
+        /// <param name="value">The string value.</param>
+        private ValueString(string value) => this.value = value;
+
 #if S_BINARY_SERIALIZATION
         /// <summary>
         ///     Initializes a new instance of the <see cref="ValueString" /> struct
@@ -124,6 +130,26 @@ namespace Dawn
         #endregion Operators
 
         #region Methods
+
+        /// <summary>
+        ///     Initializes a new <see cref="ValueString" /> by converting the
+        ///     specified, formattable object using the invariant culture.
+        /// </summary>
+        /// <typeparam name="T">Type of the value to serialize as string.</typeparam>
+        /// <param name="value">The value to serialize as string.</param>
+        /// <returns>
+        ///     A new <see cref="ValueString" /> containing
+        ///     the serialized <paramref name="value" />.
+        /// </returns>
+        /// <remarks>
+        ///     Use this method to avoid boxing when initializing a
+        ///     <see cref="ValueString" /> from a struct.
+        ///     You can use the <see cref="ValueString(object)" /> constructor
+        ///     directly if your value is of a reference type.
+        /// </remarks>
+        public static ValueString Of<T>(T value)
+            where T : struct, IFormattable
+            => new ValueString(value.ToString(null, CultureInfo.InvariantCulture));
 
         /// <summary>
         ///     Converts the value to the given type using the invariant
