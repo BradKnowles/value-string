@@ -319,14 +319,11 @@ namespace Dawn
         ///     <paramref name="other" />; otherwise, <c>false</c>.
         /// </returns>
         public bool Equals(ValueString other, StringComparison comparison)
-        {
-            return ReferenceEquals(this.value, other.value)
-                || (this.value?.Equals(other.value, comparison) ?? false);
-        }
+            => this.Equals(other.value, comparison);
 
         /// <summary>
-        ///     Determines whether the specified string
-        ///     value is equal to this instance.
+        ///     Determines whether the specified value
+        ///     string is equal to this instance.
         /// </summary>
         /// <param name="other">The value to compare to this instance.</param>
         /// <returns>
@@ -337,7 +334,24 @@ namespace Dawn
         ///     This method performs an ordinal (case-sensitive
         ///     and culture-insensitive) comparison.
         /// </remarks>
-        public bool Equals(ValueString other) => this.value == other.value;
+        public bool Equals(ValueString other) => this.Equals(other.value);
+
+        /// <summary>
+        ///     Determines whether the specified string is equal to
+        ///     this instance. A parameter specifies the culture,
+        ///     case, and sort rules used in the comparison.
+        /// </summary>
+        /// <param name="other">The value to compare to this instance.</param>
+        /// <param name="comparison">
+        ///     One of the enumeration values that specifies
+        ///     how the value strings will be compared.
+        /// </param>
+        /// <returns>
+        ///     <c>true</c>, if the current value is equal to
+        ///     <paramref name="other" />; otherwise, <c>false</c>.
+        /// </returns>
+        public bool Equals(string other, StringComparison comparison)
+            => ReferenceEquals(this.value, other) || (this.value?.Equals(other, comparison) ?? false);
 
         /// <summary>
         ///     Determines whether the specified string is equal to this instance.
@@ -351,7 +365,7 @@ namespace Dawn
         ///     This method performs an ordinal (case-sensitive
         ///     and culture-insensitive) comparison.
         /// </remarks>
-        bool IEquatable<string>.Equals(string other) => this.Equals(other);
+        public bool Equals(string other) => this.value == other;
 
         /// <summary>
         ///     Determines whether the object is equal to this instance.

@@ -164,7 +164,10 @@ namespace Dawn.Tests
 
             // StringComparison overload.
             Assert.False(v1a.Equals(v2, StringComparison.Ordinal));
+            Assert.False(v1a.Equals(v2.ToString(), StringComparison.Ordinal));
+
             Assert.True(v1a.Equals(v2, StringComparison.OrdinalIgnoreCase));
+            Assert.True(v1a.Equals(v2.ToString(), StringComparison.OrdinalIgnoreCase));
 
             // Convert and compare.
             Assert.True(v1a.Is(s1));
