@@ -27,6 +27,13 @@ value = new ValueString(null);
 number = value.As<double>(); // Throws an InvalidCastException.
 var nullable = value.As<double?>(); // null.
 
+// Enums are supported (flag enums too).
+value = new ValueString("Red"); // Enum field name.
+var red = value.As<ConsoleColor>();
+
+value = new ValueString("12"); // Enum field value.
+var green = value.As<ConsoleColor>();
+
 // ValueString.Is is just like ValueString.As, but
 // calls the type's TryParse method instead of Parse.
 value = new ValueString("1.1.1.1");
