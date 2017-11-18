@@ -43,13 +43,7 @@ namespace Dawn
     using System.Xml.Schema;
     using System.Xml.Serialization;
 
-    /// <summary>Represents arbitrary data as string.</summary>
-    /// <remarks>
-    ///     <see cref="ValueString" /> methods are culture-insensitive by default.
-    ///     So the invariant culture (<see cref="CultureInfo.InvariantCulture" />)
-    ///     is used unless one of the overloads accepting
-    ///     an <see cref="IFormatProvider" /> is used.
-    /// </remarks>
+    /// <summary>Represents data serialized as a culture-neutral (invariant) string.</summary>
 #if S_BINARY_SERIALIZATION
     [Serializable]
 #endif
@@ -75,16 +69,16 @@ namespace Dawn
         /// <summary>
         ///     Initializes a new instance of the <see cref="ValueString" /> struct.
         /// </summary>
-        /// <param name="data">The data to hold as string.</param>
+        /// <param name="value">The value to hold as string.</param>
         /// <remarks>
         ///     Invariant culture will be used converting the data to string
         ///     if its type implements <see cref="IFormattable" />.
         /// </remarks>
-        public ValueString(object data)
+        public ValueString(object value)
         {
-            this.value = data is IFormattable f
+            this.value = value is IFormattable f
                 ? f.ToString(null, CultureInfo.InvariantCulture)
-                : data?.ToString();
+                : value?.ToString();
         }
 
 #if S_BINARY_SERIALIZATION
@@ -103,9 +97,9 @@ namespace Dawn
         #region Operators
 
         /// <summary>An implicit conversion operator from a string.</summary>
-        /// <param name="data">The string data to wrap.</param>
-        public static implicit operator ValueString(string data)
-            => new ValueString(data);
+        /// <param name="value">The string value to wrap.</param>
+        public static implicit operator ValueString(string value)
+            => new ValueString(value);
 
         /// <summary>An equality operator for two value strings.</summary>
         /// <param name="left">The left operand.</param>
