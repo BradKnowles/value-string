@@ -124,6 +124,47 @@ consistent behavior.
                      
 See [the unit tests][1] for details.
 
+### Default Parsing Arguments
+
+ValueString, as mentioned above, supports some parsing methods that require
+arguments of types `NumberStyles` and `DateTimeStyles`. Since `As` and `Is`
+overloads don't let you specify any argument other than a format provider,
+the following defaults are used when calling these parsing methods.
+
+* `static bool TryParse(string, NumberStyles, IFormatProvider, out T)`
+
+  ValueString passes `NumberStyles.Number` if this parsing method is used
+  since it provides a good set of rules shared by the default parsing methods
+  of most numeric types in the BCL.
+
+* `static bool TryParse(string, IFormatProvider, DateTimeStyles, out T)`
+
+   ValueString passes `DateTimeStyles.None` if this parsing method is used
+   since it represents the default style used by the `DateTime`'s parsing
+   methods that do not require a `styles` parameter.
+
+### Special Cases
+
+There are some special cases implemented for parsing value strings to the
+following types.
+
+* `System.Boolean`
+
+  The default boolean parsing methods support converting only from the "True"
+  and "False" strings (case-insensitive). ValueString, in addition to these
+  two, also allows the following strings to be converted to `bool`:
+
+  "1" and "Yes" are converted to `true`.  
+  "0" and "No" are converted to `false`.
+
+* `System.Uri`
+
+  `Uri` class provides a static `TryCreate` method instead of a `TryParse`.
+  ValueString allows parsing URI strings to `Uri` instances using this method,
+  passing `UriKind.Absolute` as the mandatory `uriKind` argument since it is
+  also the default URI kind used by the `Uri(string)` constructor.
+  
+
 ### FAQ
 
 * #### Why a custom struct instead of some string extensions?
