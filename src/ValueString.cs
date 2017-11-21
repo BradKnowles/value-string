@@ -180,7 +180,7 @@ namespace Dawn
         {
             try
             {
-                return Parser.DefaultParser<T>.Func(this.value, provider);
+                return Parser.DefaultParser<T>.Parse(this.value, provider);
             }
             catch (Exception x)
             when (!(x is InvalidCastException))
@@ -228,7 +228,7 @@ namespace Dawn
         ///     otherwise, <c>false</c>.
         /// </returns>
         public bool Is<T>(IFormatProvider provider, out T result)
-            => Parser.DefaultParser<T>.TryFunc(this.value, provider, out result);
+            => Parser.DefaultParser<T>.TryParse(this.value, provider, out result);
 
         /// <summary>Gets the underlying string data of the value.</summary>
         /// <param name="result">
@@ -998,11 +998,11 @@ namespace Dawn
                 ///     This indicates no delegate could be initialized that
                 ///     parses a string to the type <typeparamref name="T" />.
                 /// </remarks>
-                public static readonly PF<T> Func = InitFunc(true);
+                public static readonly PF<T> Parse = InitParse(true);
 
                 /// <summary>The cached safe parser.</summary>
                 /// <remarks>This field cannot be <c>null</c>.</remarks>
-                public static readonly TPF<T> TryFunc = InitTryFunc(true);
+                public static readonly TPF<T> TryParse = InitTryParse(true);
 
                 #endregion Fields
 
@@ -1012,7 +1012,7 @@ namespace Dawn
                 ///     Initializes a parser of type <typeparamref name="T" />.
                 /// </summary>
                 /// <param name="fallbackToTryParse">
-                ///     Whether to fall back to <see cref="InitTryFunc(bool)" />
+                ///     Whether to fall back to <see cref="InitTryParse(bool)" />
                 ///     if no suitable parser method is found.
                 /// </param>
                 /// <returns>
@@ -1020,7 +1020,7 @@ namespace Dawn
                 ///     specified format provider to type <typeparamref name="T" />,
                 ///     if one could be initialized; otherwise, <c>null</c>.
                 /// </returns>
-                private static PF<T> InitFunc(bool fallbackToTryParse)
+                private static PF<T> InitParse(bool fallbackToTryParse)
                 {
                     var targetType = typeof(T);
 
@@ -1031,27 +1031,27 @@ namespace Dawn
 
                     // Initialize a nullable value parser if the target type is nullable.
                     if (common.IsNullable(targetType, out targetType))
-                        return common.CompileNullableParser<PF<T>>(targetType, nameof(Func));
+                        return common.CompileNullableParser<PF<T>>(targetType, nameof(Parse));
 
                     // Search for the parsing method.
                     const string name = "Parse";
                     var method = GetMethod(targetType, name, common.formattableParserSig);
                     if (method?.ReturnType == targetType && method.IsStatic)
-                        return InitFunc(targetType, common.CompileFormattableParser<T>(method));
+                        return InitParse(targetType, common.CompileFormattableParser<T>(method));
 
                     method = GetMethod(targetType, name, common.parserSig);
                     if (method?.ReturnType == targetType && method.IsStatic)
                     {
                         var f = common.CompileParser<T>(method);
-                        return InitFunc(targetType, (s, provider) => f(s));
+                        return InitParse(targetType, (s, provider) => f(s));
                     }
 
                     // Wrap the safe parser.
                     if (fallbackToTryParse)
                     {
-                        var parser = InitTryFunc(false);
+                        var parser = InitTryParse(false);
                         if (parser != null)
-                            return InitFunc(targetType, (s, provider) =>
+                            return InitParse(targetType, (s, provider) =>
                             {
                                 return parser(s, provider, out var result)
                                     ? result
@@ -1070,7 +1070,7 @@ namespace Dawn
                     if (TryGetConstructor(targetType, common.parserSig, out var constructor))
                     {
                         var f = common.CompileCtor<T>(constructor);
-                        return InitFunc(targetType, (s, provider) => f(s));
+                        return InitParse(targetType, (s, provider) => f(s));
                     }
 
                     // Check for a custom parser.
@@ -1095,7 +1095,7 @@ namespace Dawn
                 ///     A parser delegate that supports custom parsers and falls
                 ///     back to calling the specified <paramref name="parser" />.
                 /// </returns>
-                private static PF<T> InitFunc(Type targetType, PF<T> parser)
+                private static PF<T> InitParse(Type targetType, PF<T> parser)
                 {
                     return !CustomParser.TryGetParser(targetType, out TPF<T> custom)
                         ? parser
@@ -1111,14 +1111,14 @@ namespace Dawn
                 ///     Initializes a safe parser of type <typeparamref name="T" />.
                 /// </summary>
                 /// <param name="fallbackToParse">
-                ///     Whether to fall back to <see cref="InitFunc(bool)" />
+                ///     Whether to fall back to <see cref="InitParse(bool)" />
                 ///     if no suitable, safe parser method is found.
                 /// </param>
                 /// <returns>
                 ///     A safe delegate that parses the specified string using the
                 ///     specified format provider to type <typeparamref name="T" />.
                 /// </returns>
-                private static TPF<T> InitTryFunc(bool fallbackToParse)
+                private static TPF<T> InitTryParse(bool fallbackToParse)
                 {
                     // Return if the target type is directly assignable from string.
                     var targetType = typeof(T);
@@ -1132,7 +1132,7 @@ namespace Dawn
 
                     // Initialize a nullable value parser if the target type is nullable.
                     if (common.IsNullable(targetType, out targetType))
-                        return common.CompileNullableParser<TPF<T>>(targetType, nameof(TryFunc));
+                        return common.CompileNullableParser<TPF<T>>(targetType, nameof(TryParse));
 
                     // Search for a parsing method.
                     const string name = "TryParse";
@@ -1141,21 +1141,21 @@ namespace Dawn
                     var sig = common.GetAdded(common.formattableParserSig, outTargetType);
                     var method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
-                        return InitTryFunc(
+                        return InitTryParse(
                             targetType,
                             common.CompileSafeFormattableParser<T>(method, outTargetType));
 
                     sig = common.GetAdded(common.numericParserSig, outTargetType);
                     method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
-                        return InitTryFunc(
+                        return InitTryParse(
                             targetType,
                             common.CompileSafeNumericParser<T>(method, targetType, outTargetType));
 
                     sig = common.GetAdded(common.dateParserSig, outTargetType);
                     method = GetMethod(targetType, name, sig);
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
-                        return InitTryFunc(
+                        return InitTryParse(
                             targetType,
                             common.CompileSafeDateParser<T>(method, outTargetType));
 
@@ -1164,7 +1164,7 @@ namespace Dawn
                     if (method?.ReturnType == common.booleanType && method.IsStatic)
                     {
                         var f = common.CompileSafeParser<T>(method, outTargetType);
-                        return InitTryFunc(
+                        return InitTryParse(
                             targetType,
                             (string s, IFormatProvider provider, out T result) => f(s, out result));
                     }
@@ -1173,9 +1173,9 @@ namespace Dawn
                     if (!fallbackToParse)
                         return null;
 
-                    var parser = InitFunc(false);
+                    var parser = InitParse(false);
                     if (parser != null)
-                        return InitTryFunc(targetType, (string s, IFormatProvider provider, out T result) =>
+                        return InitTryParse(targetType, (string s, IFormatProvider provider, out T result) =>
                         {
                             try
                             {
@@ -1190,7 +1190,7 @@ namespace Dawn
                         });
 
                     // Return a failure parser.
-                    return InitTryFunc(targetType, (string s, IFormatProvider provider, out T result) =>
+                    return InitTryParse(targetType, (string s, IFormatProvider provider, out T result) =>
                     {
                         result = default;
                         return false;
@@ -1207,7 +1207,7 @@ namespace Dawn
                 ///     A safe parser delegate that supports custom parsers and falls
                 ///     back to calling the specified <paramref name="parser" />.
                 /// </returns>
-                private static TPF<T> InitTryFunc(Type targetType, TPF<T> parser)
+                private static TPF<T> InitTryParse(Type targetType, TPF<T> parser)
                 {
                     return !CustomParser.TryGetParser(targetType, out TPF<T> custom)
                         ? parser
@@ -1285,11 +1285,11 @@ namespace Dawn
                 ///     This indicates no delegate could be initialized that
                 ///     parses a string to the type <typeparamref name="T" />.
                 /// </remarks>
-                public static readonly PF<T?> Func = InitFunc();
+                public static readonly PF<T?> Parse = InitParse();
 
                 /// <summary>The cached safe parser.</summary>
                 /// <remarks>This field cannot be <c>null</c>.</remarks>
-                public static readonly TPF<T?> TryFunc = InitTryFunc();
+                public static readonly TPF<T?> TryParse = InitTryParse();
 
                 #endregion Fields
 
@@ -1304,12 +1304,12 @@ namespace Dawn
                 ///     if one could be initialized; otherwise, <c>null</c>.
                 /// </returns>
                 /// <remarks>
-                ///     The underlying parser uses the <see cref="DefaultParser{T}.Func" />
+                ///     The underlying parser uses the <see cref="DefaultParser{T}.Parse" />
                 ///     when the specified string is not null.
                 /// </remarks>
-                private static PF<T?> InitFunc()
+                private static PF<T?> InitParse()
                 {
-                    var f = DefaultParser<T>.Func;
+                    var f = DefaultParser<T>.Parse;
                     if (f != null)
                         return (s, provider) => s != null ? f(s, provider) : default;
 
@@ -1324,10 +1324,10 @@ namespace Dawn
                 ///     specified format provider to type <typeparamref name="T" />.
                 /// </returns>
                 /// <remarks>
-                ///     The underlying parser uses the <see cref="DefaultParser{T}.TryFunc" />
+                ///     The underlying parser uses the <see cref="DefaultParser{T}.TryParse" />
                 ///     when the specified string is not null.
                 /// </remarks>
-                private static TPF<T?> InitTryFunc()
+                private static TPF<T?> InitTryParse()
                 {
                     return (string s, IFormatProvider provider, out T? result) =>
                     {
@@ -1337,7 +1337,7 @@ namespace Dawn
                             return true;
                         }
 
-                        if (DefaultParser<T>.TryFunc(s, provider, out var r))
+                        if (DefaultParser<T>.TryParse(s, provider, out var r))
                         {
                             result = r;
                             return true;
