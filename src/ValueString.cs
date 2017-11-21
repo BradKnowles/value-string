@@ -623,7 +623,7 @@ namespace Dawn
                 this.booleanType = typeof(bool);
 
                 this.nullableValueType = typeof(Nullable<>);
-                this.nullableParserType = typeof(Nullable<>);
+                this.nullableParserType = typeof(NullableParser<>);
 
                 this.formattableParserSig = new[] { this.stringType, this.providerType };
                 this.parserSig = new[] { this.stringType };
@@ -1311,7 +1311,7 @@ namespace Dawn
                 {
                     var f = DefaultParser<T>.Parse;
                     if (f != null)
-                        return (s, provider) => s != null ? f(s, provider) : default;
+                        return (s, provider) => s != null ? f(s, provider) : default(T?);
 
                     return null;
                 }
