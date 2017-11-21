@@ -189,6 +189,10 @@ namespace Dawn.Tests
             Assert.Null(vNull.ToString());
             Assert.True(vNull.Equals(null as string));
             Assert.True(vNull.Equals(null as object));
+            Assert.Throws<InvalidCastException>(() => vNull.As<double>());
+            Assert.Equal(default, vNull.As<double?>());
+            Assert.True(vNull.Is(out double? d));
+            Assert.Equal(default, d);
         }
 
         /// <summary>
