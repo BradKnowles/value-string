@@ -112,6 +112,7 @@ namespace Dawn
         ///     and value to the specified dictionary.
         /// </summary>
         /// <typeparam name="TKey">The type of keys in the target dictionary.</typeparam>
+        /// <typeparam name="TValue">The type of the value to add.</typeparam>
         /// <param name="target">The target dictionary.</param>
         /// <param name="key">
         ///     The object to use as the key of the element to add.
@@ -131,12 +132,12 @@ namespace Dawn
         ///     Invariant culture will be used converting the value to string
         ///     if its type implements <see cref="IFormattable" />.
         /// </remarks>
-        public static void Add<TKey>(
-            this IDictionary<TKey, ValueString> target, TKey key, object value)
+        public static void Add<TKey, TValue>(
+            this IDictionary<TKey, ValueString> target, TKey key, TValue value)
         {
             try
             {
-                target.Add(key, new ValueString(value));
+                target.Add(key, ValueString.Of(value));
             }
             catch (NullReferenceException)
             {
@@ -146,6 +147,7 @@ namespace Dawn
 
         /// <summary>Sets the value of an element with the provided key.</summary>
         /// <typeparam name="TKey">The type of keys in the target dictionary.</typeparam>
+        /// <typeparam name="TValue">The type of the value to set.</typeparam>
         /// <param name="target">The target dictionary.</param>
         /// <param name="key">The object to use as the key of the element to set.</param>
         /// <param name="value">The object to use as the value of the element to set.</param>
@@ -160,12 +162,12 @@ namespace Dawn
         ///     Invariant culture will be used converting the value to string
         ///     if its type implements <see cref="IFormattable" />.
         /// </remarks>
-        public static void Set<TKey>(
-            this IDictionary<TKey, ValueString> target, TKey key, object value)
+        public static void Set<TKey, TValue>(
+            this IDictionary<TKey, ValueString> target, TKey key, TValue value)
         {
             try
             {
-                target[key] = new ValueString(value);
+                target[key] = ValueString.Of(value);
             }
             catch (NullReferenceException)
             {

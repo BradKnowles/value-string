@@ -76,7 +76,7 @@ namespace Dawn.Tests
             var d = 1.5;
             Assert.Equal("1,5", d.ToString());
 
-            var v = new ValueString(d); // Converted using the invariant culture.
+            var v = ValueString.Of(d); // Converted using the invariant culture.
             Assert.Equal("1.5", v.ToString());
         }
 
@@ -89,7 +89,7 @@ namespace Dawn.Tests
         {
             var time = new DateTime(2016, 11, 28, 22, 59, 58);
 
-            var fr = new ValueString(time.ToString(frCulture));
+            var fr = ValueString.Of(time.ToString(frCulture));
             Assert.Equal("28/11/2016 22:59:58", fr.ToString());
             Assert.Throws<InvalidCastException>(() => fr.As<DateTime>());
             Assert.Equal(time, fr.As<DateTime>(frCulture));
@@ -99,7 +99,7 @@ namespace Dawn.Tests
             Assert.True(fr.Is(time, frCulture));
             Assert.Equal(time, parsed);
 
-            var invariant = new ValueString(time);
+            var invariant = ValueString.Of(time);
             Assert.Equal("11/28/2016 22:59:58", invariant.ToString());
             Assert.Throws<InvalidCastException>(() => invariant.As<DateTime>(frCulture));
             Assert.Equal(time, invariant.As<DateTime>());
@@ -117,11 +117,11 @@ namespace Dawn.Tests
         public void ValueStringIsEquatable()
         {
             var s1 = "a";
-            var v1a = new ValueString(s1);
-            var v1b = new ValueString(s1);
+            var v1a = ValueString.Of(s1);
+            var v1b = ValueString.Of(s1);
 
             var s2 = "A";
-            var v2 = new ValueString(s2);
+            var v2 = ValueString.Of(s2);
 
             // As<T>, ToString, Is and Is<T> returns the original string data.
             Assert.Same(v1a.As<string>(), v1b.ToString());
@@ -164,13 +164,16 @@ namespace Dawn.Tests
 
             // StringComparison overload.
             Assert.False(v1a.Equals(v2, StringComparison.Ordinal));
+            Assert.False(v1a.Equals(v2.ToString(), StringComparison.Ordinal));
+
             Assert.True(v1a.Equals(v2, StringComparison.OrdinalIgnoreCase));
+            Assert.True(v1a.Equals(v2.ToString(), StringComparison.OrdinalIgnoreCase));
 
             // Convert and compare.
             Assert.True(v1a.Is(s1));
             Assert.False(v1a.Is(s2));
 
-            v1a = new ValueString(1);
+            v1a = ValueString.Of(1);
             Assert.True(v1a.Is(1));
             Assert.False(v1a.Is(2));
         }
@@ -181,10 +184,14 @@ namespace Dawn.Tests
         [Fact(DisplayName = "ValueString allows null values.")]
         public void ValueStringAllowsNullValues()
         {
-            var vNull = new ValueString(null);
+            var vNull = ValueString.Of<object>(null);
             Assert.Null(vNull.ToString());
             Assert.True(vNull.Equals(null as string));
             Assert.True(vNull.Equals(null as object));
+            Assert.Throws<InvalidCastException>(() => vNull.As<double>());
+            Assert.Equal(default, vNull.As<double?>());
+            Assert.True(vNull.Is(out double? d));
+            Assert.Equal(default, d);
         }
 
         /// <summary>
@@ -264,22 +271,22 @@ namespace Dawn.Tests
         public void ValueStringSupportsEnums()
         {
             var e = TestEnum.Parsed;
-            var v = new ValueString(e);
+            var v = ValueString.Of(e);
             Assert.Equal("Parsed", v.ToString());
             Assert.Equal(e, v.As<TestEnum>());
 
             var i = (int)e;
-            v = new ValueString(i);
+            v = ValueString.Of(i);
             Assert.Equal(i, v.As<int>());
             Assert.Equal(e, v.As<TestEnum>());
 
             var f = TestFlagEnum.Red | TestFlagEnum.Blue;
-            v = new ValueString(f);
+            v = ValueString.Of(f);
             Assert.Equal("Red, Blue", v.ToString());
             Assert.Equal(f, v.As<TestFlagEnum>());
 
             i = (int)f;
-            v = new ValueString(i);
+            v = ValueString.Of(i);
             Assert.Equal(i, v.As<int>());
             Assert.Equal(f, v.As<TestFlagEnum>());
         }
@@ -474,14 +481,14 @@ namespace Dawn.Tests
                 params Func<IConvertible, T>[] variantConverters)
                 where T : IEquatable<T>
             {
-                var invV = new ValueString(value);
+                var invV = ValueString.Of(value);
                 var invC = invV as IConvertible;
                 Assert.Equal(TypeCode.Object, invC.GetTypeCode());
                 Assert.Equal(value, invariantConverter(invC));
                 Assert.Equal(value, invC.ToType(typeof(T), null));
 
                 var varV = formatProvider != null
-                    ? new ValueString(value is IFormattable f ? f.ToString(null, formatProvider) : value.ToString())
+                    ? ValueString.Of(value is IFormattable f ? f.ToString(null, formatProvider) : value.ToString())
                     : invV;
 
                 var varC = varV as IConvertible;
@@ -557,7 +564,7 @@ namespace Dawn.Tests
         [Fact(DisplayName = "ValueString can be formatted.")]
         public void ValueStringCanBeFormatted()
         {
-            var v = new ValueString("foo bar baz");
+            var v = ValueString.Of("foo bar baz");
             Assert.Throws<ArgumentException>("values", () => v.Format(("foo", "bar"), (null, "baz"))); // Null key.
             Assert.Throws<ArgumentException>("values", () => v.Format(("foo", "bar"), ("foo", "baz"))); // Duplicate key.
 
@@ -578,7 +585,7 @@ namespace Dawn.Tests
         private static void Test<TTarget, TValue>(TValue value)
             where TTarget : BaseMock<TValue>
         {
-            var v = new ValueString(value);
+            var v = ValueString.Of(value);
             Assert.Equal(value, v.As<TTarget>().Value);
             Assert.True(v.Is(out TTarget temp));
             Assert.Equal(value, temp.Value);

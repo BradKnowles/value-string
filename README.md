@@ -12,24 +12,31 @@ instances from culture-neutral (invariant) strings - often read from a simple
 configuration file or a database table that contains configuration data as strings.
 
 ```c#
-// ValueString constructor accepts a System.Object, and uses the invariant
-// culture when converting it to a string if it implements IFormattable.
+// ValueString uses the invariant culture when converting
+// objects to string if they implement IFormattable.
 // So the following value contains "1.5" (dot-separated) even if (1.5).ToString()
 // returns "1,5" (comma-separated) due to the current culture.
-var value = new ValueString(1.5);
+var value = ValueString.Of(1.5);
 
 // ValueString.As method uses the invariant culture by default.
 // It also has an overload accepting an IFormatProvider.
 var number = value.As<double>(); // Calls double.Parse.
 
 // Nullable<T> values are supported.
-value = new ValueString(null);
+value = ValueString.Of(default(double?));
 number = value.As<double>(); // Throws an InvalidCastException.
 var nullable = value.As<double?>(); // null.
 
+// Enums are supported (flag enums too).
+value = ValueString.Of("Red"); // Enum field name.
+var red = value.As<ConsoleColor>();
+
+value = ValueString.Of("12"); // Enum field value.
+var green = value.As<ConsoleColor>();
+
 // ValueString.Is is just like ValueString.As, but
 // calls the type's TryParse method instead of Parse.
-value = new ValueString("1.1.1.1");
+value = ValueString.Of("1.1.1.1");
 if (value.Is(out IPAddress address)) // Calls IPAddress.TryParse.
     Console.WriteLine("The IP address is: {0}", address);
 
@@ -117,12 +124,53 @@ consistent behavior.
                      
 See [the unit tests][1] for details.
 
+### Default Parsing Arguments
+
+ValueString, as mentioned above, supports some parsing methods that require
+arguments of types `NumberStyles` and `DateTimeStyles`. Since `As` and `Is`
+overloads don't let you specify any argument other than a format provider,
+the following defaults are used when calling these parsing methods.
+
+* `static bool TryParse(string, NumberStyles, IFormatProvider, out T)`
+
+  ValueString passes `NumberStyles.Number` if this parsing method is used
+  since it provides a good set of rules shared by the default parsing methods
+  of most numeric types in the BCL.
+
+* `static bool TryParse(string, IFormatProvider, DateTimeStyles, out T)`
+
+   ValueString passes `DateTimeStyles.None` if this parsing method is used
+   since it represents the default style used by the `DateTime`'s parsing
+   methods that do not require a `styles` parameter.
+
+### Special Cases
+
+There are some special cases implemented for parsing value strings to the
+following types.
+
+* `System.Boolean`
+
+  The default boolean parsing methods support converting only from the "True"
+  and "False" strings (case-insensitive). ValueString, in addition to these
+  two, also allows the following strings to be converted to `bool`:
+
+  "1" and "Yes" are converted to `true`.  
+  "0" and "No" are converted to `false`.
+
+* `System.Uri`
+
+  `Uri` class provides a static `TryCreate` method instead of a `TryParse`.
+  ValueString allows parsing URI strings to `Uri` instances using this method,
+  passing `UriKind.Absolute` as the mandatory `uriKind` argument since it is
+  also the default URI kind used by the `Uri(string)` constructor.
+  
+
 ### FAQ
 
 * #### Why a custom struct instead of some string extensions?
 
-  ValueString constructor uses [CultureInfo.InvariantCulture][3] to convert
-  any [IFormattable][4] object to string so it can be reliably persisted.
+  ValueString uses [CultureInfo.InvariantCulture][3] to convert any
+  [IFormattable][4] object to string so it can be reliably persisted.
   Even though it is possible to pass a string that is created using a
   culture-sensitive method directly to the ValueString constructor, it
   is not recommended since ValueString indicates culture invariance.
@@ -162,7 +210,7 @@ See [the unit tests][1] for details.
   from the unit tests:
 
   ```c#
-  var v = new ValueString("foo bar baz");
+  var v = ValueString.Of("foo bar baz");
   var s = v.Format(("foo", "bar"), ("bar", "baz"), ("baz", "foo"));
   Assert.Equal("bar baz foo", s);
   ```
