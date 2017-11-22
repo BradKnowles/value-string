@@ -12,37 +12,33 @@ instances from culture-neutral (invariant) strings - often read from a simple
 configuration file or a database table that contains configuration data as strings.
 
 ```c#
-// ValueString constructor accepts a System.Object, and uses the invariant
-// culture when converting it to a string if it implements IFormattable.
+// ValueString uses the invariant culture when converting
+// objects to string if they implement IFormattable.
 // So the following value contains "1.5" (dot-separated) even if (1.5).ToString()
 // returns "1,5" (comma-separated) due to the current culture.
-var value = new ValueString(1.5);
+var value = ValueString.Of(1.5);
 
 // ValueString.As method uses the invariant culture by default.
 // It also has an overload accepting an IFormatProvider.
 var number = value.As<double>(); // Calls double.Parse.
 
 // Nullable<T> values are supported.
-value = new ValueString(null);
+value = ValueString.Of(default(double?));
 number = value.As<double>(); // Throws an InvalidCastException.
 var nullable = value.As<double?>(); // null.
 
 // Enums are supported (flag enums too).
-value = new ValueString("Red"); // Enum field name.
+value = ValueString.Of("Red"); // Enum field name.
 var red = value.As<ConsoleColor>();
 
-value = new ValueString("12"); // Enum field value.
+value = ValueString.Of("12"); // Enum field value.
 var green = value.As<ConsoleColor>();
 
 // ValueString.Is is just like ValueString.As, but
 // calls the type's TryParse method instead of Parse.
-value = new ValueString("1.1.1.1");
+value = ValueString.Of("1.1.1.1");
 if (value.Is(out IPAddress address)) // Calls IPAddress.TryParse.
     Console.WriteLine("The IP address is: {0}", address);
-
-// If your value is a struct that implements IFormattable, you can avoid
-// boxing by initializing the ValueString using the ValueString.Of method.
-value = ValueString.Of(1.5);
 
 // An implicit operator exists converting strings to ValueString instances.
 value = "1.5";
@@ -173,8 +169,8 @@ following types.
 
 * #### Why a custom struct instead of some string extensions?
 
-  ValueString constructor uses [CultureInfo.InvariantCulture][3] to convert
-  any [IFormattable][4] object to string so it can be reliably persisted.
+  ValueString uses [CultureInfo.InvariantCulture][3] to convert any
+  [IFormattable][4] object to string so it can be reliably persisted.
   Even though it is possible to pass a string that is created using a
   culture-sensitive method directly to the ValueString constructor, it
   is not recommended since ValueString indicates culture invariance.
@@ -214,7 +210,7 @@ following types.
   from the unit tests:
 
   ```c#
-  var v = new ValueString("foo bar baz");
+  var v = ValueString.Of("foo bar baz");
   var s = v.Format(("foo", "bar"), ("bar", "baz"), ("baz", "foo"));
   Assert.Equal("bar baz foo", s);
   ```

@@ -74,6 +74,7 @@ namespace Dawn
         ///     Invariant culture will be used converting the data to string
         ///     if its type implements <see cref="IFormattable" />.
         /// </remarks>
+        [Obsolete("Use ValueString.Of to create new ValueString instances.")]
         public ValueString(object value)
         {
             this.value = value is IFormattable f
@@ -85,7 +86,7 @@ namespace Dawn
         ///     Initializes a new instance of the <see cref="ValueString" /> struct.
         /// </summary>
         /// <param name="value">The string value.</param>
-        private ValueString(string value) => this.value = value;
+        public ValueString(string value) => this.value = value;
 
 #if S_BINARY_SERIALIZATION
         /// <summary>
@@ -148,8 +149,7 @@ namespace Dawn
         ///     directly if your value is of a reference type.
         /// </remarks>
         public static ValueString Of<T>(T value)
-            where T : struct, IFormattable
-            => new ValueString(value.ToString(null, CultureInfo.InvariantCulture));
+            => new ValueString(Parser.Formatter<T>.Format(value));
 
         /// <summary>
         ///     Converts the value to the given type using the invariant
@@ -607,6 +607,9 @@ namespace Dawn
             /// <summary>The parameter expressions of date parser methods.</summary>
             private readonly ParameterExpression[] dateParserParams;
 
+            /// <summary>The <see cref="IFormattable" /> type.</summary>
+            private readonly Type formattableType;
+
             #endregion Fields
 
             #region Constructors
@@ -642,6 +645,8 @@ namespace Dawn
                 var dStylesParam = Expression.Parameter(dStylesType, "styles");
                 this.numericParserParams = new[] { stringParam, nStylesParam, providerParam };
                 this.dateParserParams = new[] { stringParam, providerParam, dStylesParam };
+
+                this.formattableType = typeof(IFormattable);
             }
 
             #endregion Constructors
@@ -982,6 +987,54 @@ namespace Dawn
             #endregion Methods
 
             #region Classes
+
+            /// <summary>Converts objects to culture-invariant strings.</summary>
+            /// <typeparam name="T">The type to convert to string.</typeparam>
+            public static class Formatter<T>
+            {
+                /// <summary>The cached formatter.</summary>
+                public static readonly Func<T, string> Format = InitFormat();
+
+                /// <summary>
+                ///     Initializes a formatter for type <typeparamref name="T" />.
+                /// </summary>
+                /// <returns>
+                ///     A delegate that converts the specified object to
+                ///     string using the invariant culture where possible.
+                /// </returns>
+                private static Func<T, string> InitFormat()
+                {
+                    var sourceType = typeof(T);
+#if S_RUNTIME_REFLECTION
+                    var info = sourceType.GetTypeInfo();
+                    var isFormattable = common.formattableType.GetTypeInfo().IsAssignableFrom(info);
+                    var isValueType = info.IsValueType;
+#else
+                    var isFormattable = common.formattableType.IsAssignableFrom(sourceType);
+                    var isValueType = sourceType.IsValueType;
+#endif
+
+                    if (isFormattable)
+                    {
+                        var instance = Expression.Parameter(sourceType, "this");
+                        var method = GetMethod(sourceType, "ToString", common.formattableParserSig);
+                        var call = Expression.Call(instance, method, common.formattableParserParams);
+                        var lambda = Expression.Lambda<Func<T, string, IFormatProvider, string>>(
+                            call, instance, common.formattableParserParams[0], common.formattableParserParams[1]);
+
+                        var compiled = lambda.Compile();
+                        if (isValueType)
+                            return f => compiled(f, null, CultureInfo.InvariantCulture);
+                        else
+                            return f => f != null ? compiled(f, null, CultureInfo.InvariantCulture) : null;
+                    }
+
+                    if (isValueType)
+                        return o => o.ToString();
+                    else
+                        return o => o?.ToString();
+                }
+            }
 
             /// <summary>
             ///     Provides a cached parser for parsing strings
