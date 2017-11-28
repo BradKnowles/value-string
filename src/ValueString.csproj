@@ -47,24 +47,16 @@
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.0'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.0' Or '$(TargetFramework)'=='netstandard1.3'">
     <DefineConstants>ALT_REFLECTION</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.3'">
-    <DefineConstants>ALT_REFLECTION</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
-    <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net35'">
     <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
-    <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR</DefineConstants>
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0' Or '$(TargetFramework)'=='net45'">
+    <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR;DYNAMIC</DefineConstants>
   </PropertyGroup>
 
 </Project>
