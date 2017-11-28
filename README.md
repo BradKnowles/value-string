@@ -175,11 +175,19 @@ following types.
   culture-sensitive method directly to the ValueString constructor, it
   is not recommended since ValueString indicates culture invariance.
 
-  However tempting it may seem, the ability to call `s.As<int>()` for any string
-  instance can introduce many subtle bugs through the abusing of these methods.
-  It would be trivial, though, to wrap them in string extensions if you really want to.
+  `ToString` methods use the current culture by default and in order for
+  `d.ToString().As<double>()` to work, `As` method should also use the current
+  culture as its default format provider. If we did that, we would lose the
+  ability to persist the serialized data to be consumed by different machines.
 
-  `public static As<T>(this string s) => new Dawn.ValueString(s).As<T>();`
+  It would be trivial, though, to wrap ValueString
+  methods in string extensions if you really want to.
+
+  ```c#
+  // Use current culture as default for consistency with ToString.
+  public static As<T>(this string s)
+      => new Dawn.ValueString(s).As<T>(CultureInfo.CurrentCulture);
+  ```
 
 * #### Why are there overloads that accept format providers?
 
@@ -216,8 +224,7 @@ following types.
   ```
 
   As mentioned in the introduction, ValueString is used mostly for parsing simple
-  configuration files and/or database tables that contain configuration data as
-  strings. These data usually include string templates that, when supplied a model
+  configuration data, including string templates that, when supplied a model
   (in our case, as key/value pairs), can form a message, URL or some basic HTML.
 
 [1]: tests/ValueStringTests.cs
