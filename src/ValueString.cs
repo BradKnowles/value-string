@@ -1,32 +1,6 @@
 ﻿// Copyright © 2016 Şafak Gür. All rights reserved.
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
-#if NETSTANDARD1_0
-#define S_RUNTIME_REFLECTION
-#define S_STRING_JOIN_ENUMERABLE
-#elif NETSTANDARD1_3
-#define S_CONVERTIBLE
-#define S_RUNTIME_REFLECTION
-#define S_STRING_JOIN_ENUMERABLE
-#elif NET35
-#define S_CONVERTIBLE
-#define S_BINARY_SERIALIZATION
-#define S_TYPE_DESCRIPTOR
-#elif NET45
-#define S_CONVERTIBLE
-#define S_BINARY_SERIALIZATION
-#define S_TYPE_DESCRIPTOR
-#define S_RUNTIME_REFLECTION
-#define S_STRING_JOIN_ENUMERABLE
-#else
-#define S_CONVERTIBLE
-#define S_BINARY_SERIALIZATION
-#define S_TYPE_DESCRIPTOR
-#define S_RUNTIME_REFLECTION
-#define S_VALUE_TUPLES
-#define S_STRING_JOIN_ENUMERABLE
-#endif
-
 namespace Dawn
 {
     using System;
@@ -35,7 +9,7 @@ namespace Dawn
     using System.Globalization;
     using System.Linq.Expressions;
     using System.Reflection;
-#if S_BINARY_SERIALIZATION
+#if BINARY_SERIALIZATION
     using System.Runtime.Serialization;
 #endif
     using System.Text.RegularExpressions;
@@ -44,15 +18,15 @@ namespace Dawn
     using System.Xml.Serialization;
 
     /// <summary>Represents data serialized as a culture-neutral (invariant) string.</summary>
-#if S_BINARY_SERIALIZATION
+#if BINARY_SERIALIZATION
     [Serializable]
 #endif
     [DebuggerDisplay("{" + nameof(value) + "}")]
     public struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
-#if S_BINARY_SERIALIZATION
+#if BINARY_SERIALIZATION
         , ISerializable
 #endif
-#if S_CONVERTIBLE
+#if !NETSTANDARD1_0
         , IConvertible
 #endif
     {
@@ -88,7 +62,7 @@ namespace Dawn
         /// <param name="value">The string value.</param>
         public ValueString(string value) => this.value = value;
 
-#if S_BINARY_SERIALIZATION
+#if BINARY_SERIALIZATION
         /// <summary>
         ///     Initializes a new instance of the <see cref="ValueString" /> struct
         ///     using the specified deserialization context.
@@ -286,7 +260,7 @@ namespace Dawn
         ///     <c>null</c> key or multiple items with the same key.
         /// </exception>
         public string Format(
-#if S_VALUE_TUPLES
+#if NETSTANDARD2_0
             params (string Key, string Value)[] values
 #else
             params KeyValuePair<string, string>[] values
@@ -316,7 +290,7 @@ namespace Dawn
                 }
             }
 
-#if S_STRING_JOIN_ENUMERABLE
+#if !NET35
             var keys = string.Join("|", replacements.Keys);
 #else
             var keys = string.Join("|", System.Linq.Enumerable.ToArray(replacements.Keys));
@@ -419,7 +393,7 @@ namespace Dawn
         /// <returns><see cref="value" />.</returns>
         public override string ToString() => this.value;
 
-#if S_BINARY_SERIALIZATION
+#if BINARY_SERIALIZATION
         /// <inheritdoc />
         void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
             => info.AddValue(nameof(this.value), this.value);
@@ -439,7 +413,7 @@ namespace Dawn
         void IXmlSerializable.WriteXml(XmlWriter writer)
             => writer.WriteString(this.value);
 
-#if S_CONVERTIBLE
+#if !NETSTANDARD1_0
         /// <inheritdoc />
         TypeCode IConvertible.GetTypeCode()
             => TypeCode.Object;
@@ -520,7 +494,7 @@ namespace Dawn
         /// <returns>The field info with the specified name.</returns>
         private static FieldInfo GetField(Type type, string fieldName)
         {
-#if S_RUNTIME_REFLECTION
+#if ALT_REFLECTION
             return type.GetRuntimeField(fieldName);
 #else
             return type.GetField(fieldName);
@@ -534,7 +508,7 @@ namespace Dawn
         /// <returns>The method info with the specified name and signature.</returns>
         private static MethodInfo GetMethod(Type type, string methodName, Type[] parameters)
         {
-#if S_RUNTIME_REFLECTION
+#if ALT_REFLECTION
             return type.GetRuntimeMethod(methodName, parameters);
 #else
             return type.GetMethod(methodName, parameters);
@@ -927,7 +901,7 @@ namespace Dawn
             /// </returns>
             private bool IsNullable(Type type, out Type underlyingType)
             {
-#if S_RUNTIME_REFLECTION
+#if ALT_REFLECTION
                 var i = type.GetTypeInfo();
                 var n = !i.IsClass
                     && i.IsGenericType
@@ -1005,7 +979,7 @@ namespace Dawn
                 private static Func<T, string> InitFormat()
                 {
                     var sourceType = typeof(T);
-#if S_RUNTIME_REFLECTION
+#if ALT_REFLECTION
                     var info = sourceType.GetTypeInfo();
                     var isFormattable = common.formattableType.GetTypeInfo().IsAssignableFrom(info);
                     var isValueType = info.IsValueType;
@@ -1113,7 +1087,7 @@ namespace Dawn
                     }
 
                     // Check for the TypeConverterAttribute.
-#if S_TYPE_DESCRIPTOR
+#if TYPE_DESCRIPTOR
                     var converter = System.ComponentModel.TypeDescriptor.GetConverter(targetType);
                     if (converter.CanConvertFrom(common.stringType))
                         return (s, provider) => (T)converter.ConvertFromString(null, provider as CultureInfo, s);
@@ -1289,7 +1263,7 @@ namespace Dawn
                 private static bool TryGetConstructor(
                     Type type, Type[] sig, out ConstructorInfo constructor)
                 {
-#if S_RUNTIME_REFLECTION
+#if ALT_REFLECTION
                     var constructors = type.GetTypeInfo().DeclaredConstructors;
 #else
                     var constructors = type.GetConstructors();

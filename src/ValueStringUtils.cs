@@ -1,10 +1,6 @@
 ﻿// Copyright © 2016 Şafak Gür. All rights reserved.
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
-#if !NET35
-#define S_READONLY_DICTIONARY
-#endif
-
 namespace Dawn
 {
     using System;
@@ -45,7 +41,7 @@ namespace Dawn
         ///     <paramref name="key" /> is <c>null</c>.
         /// </exception>
         public static bool TryGetValue<TKey, TValue>(
-#if S_READONLY_DICTIONARY
+#if !NET35
             this IReadOnlyDictionary<TKey, ValueString> source,
 #else
             this IDictionary<TKey, ValueString> source,
@@ -84,7 +80,7 @@ namespace Dawn
         ///     <paramref name="key" /> is <c>null</c>.
         /// </exception>
         public static bool TryGetValue<TKey, TValue>(
-#if S_READONLY_DICTIONARY
+#if !NET35
             this IReadOnlyDictionary<TKey, ValueString> source,
 #else
             this IDictionary<TKey, ValueString> source,
