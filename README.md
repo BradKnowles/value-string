@@ -119,7 +119,7 @@ Method family    | Behavior when a parsing method can't be found or has failed
 `ValueString.Is` | Returns `false`
                      
 `Is` overloads assume TryParse methods to be safe and in cases where they can't
-find a TryParse method, they wrap the calls within try-catch methods to provide
+find a TryParse method, they wrap the calls within try-catch blocks to provide
 consistent behavior.
                      
 See [the unit tests][1] for details.
