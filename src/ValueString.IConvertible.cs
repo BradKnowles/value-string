@@ -7,10 +7,19 @@ namespace Dawn
 {
     using System;
     using System.Globalization;
+    using System.Reflection;
 
     /// <content>Contains the <see cref="IConvertible" /> implementation.</content>
     public partial struct ValueString : IConvertible
     {
+        /// <summary>
+        ///     Contains cached <see cref="MethodInfo" /> instances of
+        ///     <see cref="As{T}(IFormatProvider)" /> to be used for
+        ///     dynamic conversions.
+        /// </summary>
+        private static readonly TypeCache<MethodInfo> asMethods
+            = new TypeCache<MethodInfo>();
+
         /// <inheritdoc />
         TypeCode IConvertible.GetTypeCode()
             => TypeCode.Object;
@@ -66,9 +75,13 @@ namespace Dawn
         /// <inheritdoc />
         object IConvertible.ToType(Type conversionType, IFormatProvider provider)
         {
-            var type = typeof(ValueString);
-            var providerType = typeof(IFormatProvider);
-            var method = GetMethod(type, "As", new[] { providerType }).MakeGenericMethod(conversionType);
+            var method = asMethods.GetOrCreate(conversionType, t =>
+            {
+                var type = typeof(ValueString);
+                var providerType = typeof(IFormatProvider);
+                return GetMethod(type, "As", new[] { providerType }).MakeGenericMethod(conversionType);
+            });
+
             return method.Invoke(this, new[] { provider ?? CultureInfo.InvariantCulture });
         }
 
