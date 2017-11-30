@@ -18,24 +18,27 @@ configuration file or a database table that contains configuration data as strin
 // returns "1,5" (comma-separated) due to the current culture.
 var value = ValueString.Of(1.5);
 
-// ValueString.As method uses the invariant culture by default.
+// "As" method uses the invariant culture by default.
 // It also has an overload accepting an IFormatProvider.
 var number = value.As<double>(); // Calls double.Parse.
 
-// Nullable<T> values are supported.
+// Nullable values are supported.
 value = ValueString.Of(default(double?));
 number = value.As<double>(); // Throws an InvalidCastException.
 var nullable = value.As<double?>(); // null.
 
-// Enums are supported (flag enums too).
+// Enums are supported.
 value = ValueString.Of("Red"); // Enum field name.
 var red = value.As<ConsoleColor>();
 
 value = ValueString.Of("12"); // Enum field value.
 var green = value.As<ConsoleColor>();
 
-// ValueString.Is is just like ValueString.As, but
-// calls the type's TryParse method instead of Parse.
+// You can also cast a "dynamic" ValueString to the target type directly.
+dynamic d = value;
+number = (double)d;
+
+// "Is" is just like "As", but calls the type's TryParse method instead of Parse.
 value = ValueString.Of("1.1.1.1");
 if (value.Is(out IPAddress address)) // Calls IPAddress.TryParse.
     Console.WriteLine("The IP address is: {0}", address);
