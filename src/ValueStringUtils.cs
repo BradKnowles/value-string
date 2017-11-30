@@ -41,7 +41,7 @@ namespace Dawn
         ///     <paramref name="key" /> is <c>null</c>.
         /// </exception>
         public static bool TryGetValue<TKey, TValue>(
-#if !NET35
+#if !NET35 && !NET40
             this IReadOnlyDictionary<TKey, ValueString> source,
 #else
             this IDictionary<TKey, ValueString> source,
@@ -80,7 +80,7 @@ namespace Dawn
         ///     <paramref name="key" /> is <c>null</c>.
         /// </exception>
         public static bool TryGetValue<TKey, TValue>(
-#if !NET35
+#if !NET35 && !NET40
             this IReadOnlyDictionary<TKey, ValueString> source,
 #else
             this IDictionary<TKey, ValueString> source,

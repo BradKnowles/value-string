@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <LangVersion>7.1</LangVersion>
-    <TargetFrameworks>netstandard2.0;netstandard1.3;netstandard1.0;net45;net35</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard1.3;netstandard1.0;net45;net40;net35</TargetFrameworks>
     <Title>Value String</Title>
     <AssemblyName>Dawn.ValueString</AssemblyName>
     <Product>Dawn Utils</Product>
@@ -47,16 +47,20 @@
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.0' Or '$(TargetFramework)'=='netstandard1.3'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.0'">
     <DefineConstants>ALT_REFLECTION</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.3'">
+    <DefineConstants>ALT_REFLECTION;CONCURRENT_COLLECTIONS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net35'">
     <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0' Or '$(TargetFramework)'=='net45'">
-    <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR;DYNAMIC</DefineConstants>
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0' Or '$(TargetFramework)'=='net45' Or '$(TargetFramework)'=='net40'">
+    <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR;CONCURRENT_COLLECTIONS;DYNAMIC</DefineConstants>
   </PropertyGroup>
 
 </Project>
