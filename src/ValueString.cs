@@ -410,6 +410,24 @@ namespace Dawn
 #endif
         }
 
+        /// <summary>
+        ///     Gets a <see cref="MethodInfo" /> instance of <see cref="As{T}()" />
+        ///     or <see cref="As{T}(IFormatProvider)" /> for the specified type.
+        /// </summary>
+        /// <param name="type">The conversion target.</param>
+        /// <param name="withFormatProvider">
+        ///     Whether to get the overload accepting a format provider.
+        /// </param>
+        /// <returns>
+        ///     A <see cref="MethodInfo" /> instance of <see cref="As{T}()" />
+        ///     or <see cref="As{T}(IFormatProvider)" />.
+        /// </returns>
+        private static MethodInfo GetAsMethod(Type type, bool withFormatProvider)
+        {
+            var parameters = withFormatProvider ? new[] { typeof(IFormatProvider) } : new Type[0];
+            return GetMethod(typeof(ValueString), "As", parameters).MakeGenericMethod(type);
+        }
+
         #endregion Methods
     }
 }

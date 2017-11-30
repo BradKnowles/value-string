@@ -6,6 +6,7 @@
 namespace Dawn
 {
     using System;
+    using System.Diagnostics;
     using System.Globalization;
     using System.Reflection;
 
@@ -17,6 +18,7 @@ namespace Dawn
         ///     <see cref="As{T}(IFormatProvider)" /> to be used for
         ///     dynamic conversions.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly TypeCache<MethodInfo> asMethods
             = new TypeCache<MethodInfo>();
 
@@ -75,13 +77,7 @@ namespace Dawn
         /// <inheritdoc />
         object IConvertible.ToType(Type conversionType, IFormatProvider provider)
         {
-            var method = asMethods.GetOrCreate(conversionType, t =>
-            {
-                var type = typeof(ValueString);
-                var providerType = typeof(IFormatProvider);
-                return GetMethod(type, "As", new[] { providerType }).MakeGenericMethod(conversionType);
-            });
-
+            var method = asMethods.GetOrCreate(conversionType, t => GetAsMethod(t, true));
             return method.Invoke(this, new[] { provider ?? CultureInfo.InvariantCulture });
         }
 
