@@ -573,6 +573,19 @@ namespace Dawn.Tests
         }
 
         /// <summary>
+        ///     Tests whether the <see cref="ValueString" />
+        ///     is dynamically convertible.
+        /// </summary>
+        [Fact(DisplayName = "ValueString is dynamic.")]
+        public void ValueStringIsDynamic()
+        {
+            var d = 1.5;
+            dynamic v = ValueString.Of(d);
+            Assert.Equal(d, (double)v);
+            Assert.Equal(d, v.As<double>());
+        }
+
+        /// <summary>
         ///     Tests whether the specified type can be initialized from string.
         /// </summary>
         /// <typeparam name="TTarget">Type to initialize from string.</typeparam>

@@ -18,24 +18,27 @@ configuration file or a database table that contains configuration data as strin
 // returns "1,5" (comma-separated) due to the current culture.
 var value = ValueString.Of(1.5);
 
-// ValueString.As method uses the invariant culture by default.
+// "As" method uses the invariant culture by default.
 // It also has an overload accepting an IFormatProvider.
 var number = value.As<double>(); // Calls double.Parse.
 
-// Nullable<T> values are supported.
+// Nullable values are supported.
 value = ValueString.Of(default(double?));
 number = value.As<double>(); // Throws an InvalidCastException.
 var nullable = value.As<double?>(); // null.
 
-// Enums are supported (flag enums too).
+// Enums are supported.
 value = ValueString.Of("Red"); // Enum field name.
 var red = value.As<ConsoleColor>();
 
 value = ValueString.Of("12"); // Enum field value.
 var green = value.As<ConsoleColor>();
 
-// ValueString.Is is just like ValueString.As, but
-// calls the type's TryParse method instead of Parse.
+// You can also cast a "dynamic" ValueString to the target type directly.
+dynamic d = value;
+number = (double)d;
+
+// "Is" is just like "As", but calls the type's TryParse method instead of Parse.
 value = ValueString.Of("1.1.1.1");
 if (value.Is(out IPAddress address)) // Calls IPAddress.TryParse.
     Console.WriteLine("The IP address is: {0}", address);
@@ -119,7 +122,7 @@ Method family    | Behavior when a parsing method can't be found or has failed
 `ValueString.Is` | Returns `false`
                      
 `Is` overloads assume TryParse methods to be safe and in cases where they can't
-find a TryParse method, they wrap the calls within try-catch methods to provide
+find a TryParse method, they wrap the calls within try-catch blocks to provide
 consistent behavior.
                      
 See [the unit tests][1] for details.
@@ -175,11 +178,19 @@ following types.
   culture-sensitive method directly to the ValueString constructor, it
   is not recommended since ValueString indicates culture invariance.
 
-  However tempting it may seem, the ability to call `s.As<int>()` for any string
-  instance can introduce many subtle bugs through the abusing of these methods.
-  It would be trivial, though, to wrap them in string extensions if you really want to.
+  `ToString` methods use the current culture by default and in order for
+  `d.ToString().As<double>()` to work, `As` method should also use the current
+  culture as its default format provider. If we did that, we would lose the
+  ability to persist the serialized data to be consumed by different machines.
 
-  `public static As<T>(this string s) => new Dawn.ValueString(s).As<T>();`
+  It would be trivial, though, to wrap ValueString
+  methods in string extensions if you really want to.
+
+  ```c#
+  // Use current culture as default for consistency with ToString.
+  public static As<T>(this string s)
+      => new Dawn.ValueString(s).As<T>(CultureInfo.CurrentCulture);
+  ```
 
 * #### Why are there overloads that accept format providers?
 
@@ -216,8 +227,7 @@ following types.
   ```
 
   As mentioned in the introduction, ValueString is used mostly for parsing simple
-  configuration files and/or database tables that contain configuration data as
-  strings. These data usually include string templates that, when supplied a model
+  configuration data, including string templates that, when supplied a model
   (in our case, as key/value pairs), can form a message, URL or some basic HTML.
 
 [1]: tests/ValueStringTests.cs
