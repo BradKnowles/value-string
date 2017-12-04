@@ -6,7 +6,7 @@
     <Title>Value String</Title>
     <AssemblyName>Dawn.ValueString</AssemblyName>
     <Product>Dawn Utils</Product>
-    <Version>1.4.1</Version>
+    <Version>1.5.0</Version>
     <FileVersion>1.0.0</FileVersion>
     <RootNamespace>Dawn</RootNamespace>
     <CodeAnalysisRuleSet>../style/global.ruleset</CodeAnalysisRuleSet>
@@ -40,8 +40,9 @@
     <Copyright>Copyright © 2016 Şafak Gür</Copyright>
     <PackageTags>string parse serialization</PackageTags>
     <PackageReleaseNotes>
-      * .NET Framework 4.0 support.
-      * Dynamic conversion support.
+      * Fixed using ValueString.Format with keys that need to be escaped.
+      * Added the generic ValueString.Format overload.
+      * ValueString(string) constructor is deprecated.
     </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/safakgur/value-string</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
