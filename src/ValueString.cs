@@ -48,6 +48,7 @@ namespace Dawn
         ///     Initializes a new instance of the <see cref="ValueString" /> struct.
         /// </summary>
         /// <param name="value">The string value.</param>
+        [Obsolete("Use ValueString.Of to create new ValueString instances.")]
         public ValueString(string value) => this.value = value;
 
         #endregion Constructors
@@ -56,8 +57,7 @@ namespace Dawn
 
         /// <summary>An implicit conversion operator from a string.</summary>
         /// <param name="value">The string value to wrap.</param>
-        public static implicit operator ValueString(string value)
-            => new ValueString(value);
+        public static implicit operator ValueString(string value) => Of(value);
 
         /// <summary>An equality operator for two value strings.</summary>
         /// <param name="left">The left operand.</param>
@@ -93,14 +93,24 @@ namespace Dawn
         ///     A new <see cref="ValueString" /> containing
         ///     the serialized <paramref name="value" />.
         /// </returns>
-        /// <remarks>
-        ///     Use this method to avoid boxing when initializing a
-        ///     <see cref="ValueString" /> from a struct.
-        ///     You can use the <see cref="ValueString(object)" /> constructor
-        ///     directly if your value is of a reference type.
-        /// </remarks>
         public static ValueString Of<T>(T value)
-            => new ValueString(Parser.Formatter<T>.Format(value));
+            => Of(Parser.Formatter<T>.Format(value));
+
+#pragma warning disable CS0618 // Type or member is obsolete
+
+        /// <summary>
+        ///     Initializes a new <see cref="ValueString" />
+        ///     using the specified string.
+        /// </summary>
+        /// <param name="value">The string value.</param>
+        /// <returns>
+        ///     A new <see cref="ValueString" /> encapsulating
+        ///     <paramref name="value" />.
+        /// </returns>
+        public static ValueString Of(string value)
+            => new ValueString(value);
+
+#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <summary>
         ///     Converts the value to the given type using the invariant
@@ -249,7 +259,7 @@ namespace Dawn
             params KeyValuePair<string, string>[] values
 #endif
             )
-            => new ValueString(this.Format(values)).As<T>();
+            => Of(this.Format(values)).As<T>();
 
         /// <summary>
         ///     Finds the specified keys and replace
@@ -403,7 +413,7 @@ namespace Dawn
         void IXmlSerializable.ReadXml(XmlReader reader)
         {
             if (reader.Read())
-                this = new ValueString(reader.Value);
+                this = Of(reader.Value);
         }
 
         /// <inheritdoc />

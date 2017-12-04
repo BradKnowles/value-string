@@ -175,7 +175,7 @@ following types.
   ValueString uses [CultureInfo.InvariantCulture][3] to convert any
   [IFormattable][4] object to string so it can be reliably persisted.
   Even though it is possible to pass a string that is created using a
-  culture-sensitive method directly to the ValueString constructor, it
+  culture-sensitive method directly to `ValueString.Of(string)`, it
   is not recommended since ValueString indicates culture invariance.
 
   `ToString` methods use the current culture by default and in order for
