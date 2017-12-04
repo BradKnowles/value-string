@@ -216,35 +216,26 @@ following types.
 
 * #### Have I just noticed a `Format` method hiding in there?
 
-  You have keen eyes. There is a method in ValueString that allows you to
-  format string templates using key/value pairs. Here is the relevant section
-  from the unit tests:
-
-  ```c#
-  var v = ValueString.Of("foo bar baz");
-  var s = v.Format(("foo", "bar"), ("bar", "baz"), ("baz", "foo"));
-  Assert.Equal("bar baz foo", s);
-  ```
-
   As mentioned in the introduction, ValueString is used mostly for parsing simple
   configuration data, including string templates that, when supplied a model
-  (in our case, as key/value pairs), can form a message, URL or some basic HTML.
-
-* #### How is it different than `string.Replace`?
-
-  The same sample above outputs a different string using replace:
+  (in our case, as key/value pairs), can form a message, URL or some basic HTML:
 
   ```c#
-  var s = "foo bar baz"
-      .Replace("foo", "bar")  // bar bar baz
-      .Replace("bar", "baz")  // baz baz baz
-      .Replace("baz", "foo"); // foo foo foo
-      
-  Assert.Equal("foo foo foo", s);
-  ```
+  var pattern = ValueString.Of("https://github.com/{user}/{repo}");
 
-  `ValueString.Format` replaces the specified tokens in one go.
-  It is closer to `string.Format` than it is to `string.Replace`.
+  // ValueString.Format method works like string.Format, but it uses names
+  // instead of indexes. "alignment" and "formatString" components that
+  // are recognized by the string.Format are currently not supported.
+  var s = pattern.Format(
+      ("user", "safakgur"),
+      ("repo", "value-string")); // string: "https://github.com/safakgur/value-string"
+
+  // There is also a generic overload that converts the resulted
+  // string to the specified type using the invariant culture.
+  var uri = pattern.Format<Uri>(
+      ("user", "safakgur"),
+      ("repo", "value-string")); // Uri: "https://github.com/safakgur/value-string"
+  ```
 
 [1]: tests/ValueStringTests.cs
 [2]: https://docs.microsoft.com/dotnet/api/system.componentmodel.typeconverterattribute

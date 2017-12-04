@@ -265,14 +265,15 @@ namespace Dawn
             for (var i = 0; i < values.Length; i++)
             {
                 var pair = values[i];
-                try
-                {
-                    replacements.Add(pair.Key, pair.Value ?? string.Empty);
-                }
-                catch (ArgumentNullException x)
+                if (pair.Key == null)
                 {
                     var m = "Values cannot contain pairs with null keys.";
-                    throw new ArgumentException(m, nameof(values), x);
+                    throw new ArgumentException(m, nameof(values));
+                }
+
+                try
+                {
+                    replacements.Add($"{{{pair.Key}}}", pair.Value ?? string.Empty);
                 }
                 catch (ArgumentException x)
                 {
