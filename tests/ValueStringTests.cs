@@ -564,12 +564,18 @@ namespace Dawn.Tests
         [Fact(DisplayName = "ValueString can be formatted.")]
         public void ValueStringCanBeFormatted()
         {
+            // No conversion.
             var v = ValueString.Of("foo bar baz");
             Assert.Throws<ArgumentException>("values", () => v.Format(("foo", "bar"), (null, "baz"))); // Null key.
             Assert.Throws<ArgumentException>("values", () => v.Format(("foo", "bar"), ("foo", "baz"))); // Duplicate key.
 
             var s = v.Format(("foo", "bar"), ("bar", "baz"), ("baz", "foo"));
             Assert.Equal("bar baz foo", s);
+
+            // Conversion to URI.
+            var pattern = ValueString.Of("https://github.com/{user}/{repo}");
+            var uri = pattern.Format<Uri>(("{user}", "safakgur"), ("{repo}", "value-string"));
+            Assert.Equal(new Uri("https://github.com/safakgur/value-string"), uri);
         }
 
         /// <summary>
