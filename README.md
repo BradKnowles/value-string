@@ -175,7 +175,7 @@ following types.
   ValueString uses [CultureInfo.InvariantCulture][3] to convert any
   [IFormattable][4] object to string so it can be reliably persisted.
   Even though it is possible to pass a string that is created using a
-  culture-sensitive method directly to the ValueString constructor, it
+  culture-sensitive method directly to `ValueString.Of(string)`, it
   is not recommended since ValueString indicates culture invariance.
 
   `ToString` methods use the current culture by default and in order for
@@ -229,6 +229,22 @@ following types.
   As mentioned in the introduction, ValueString is used mostly for parsing simple
   configuration data, including string templates that, when supplied a model
   (in our case, as key/value pairs), can form a message, URL or some basic HTML.
+
+* #### How is it different than `string.Replace`?
+
+  The same sample above outputs a different string using replace:
+
+  ```c#
+  var s = "foo bar baz"
+      .Replace("foo", "bar")  // bar bar baz
+      .Replace("bar", "baz")  // baz baz baz
+      .Replace("baz", "foo"); // foo foo foo
+      
+  Assert.Equal("foo foo foo", s);
+  ```
+
+  `ValueString.Format` replaces the specified tokens in one go.
+  It is closer to `string.Format` than it is to `string.Replace`.
 
 [1]: tests/ValueStringTests.cs
 [2]: https://docs.microsoft.com/dotnet/api/system.componentmodel.typeconverterattribute

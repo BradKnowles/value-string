@@ -7,6 +7,7 @@ namespace Dawn
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
+    using System.Linq;
     using System.Reflection;
     using System.Text.RegularExpressions;
     using System.Xml;
@@ -47,6 +48,7 @@ namespace Dawn
         ///     Initializes a new instance of the <see cref="ValueString" /> struct.
         /// </summary>
         /// <param name="value">The string value.</param>
+        [Obsolete("Use ValueString.Of to create new ValueString instances.")]
         public ValueString(string value) => this.value = value;
 
         #endregion Constructors
@@ -55,8 +57,7 @@ namespace Dawn
 
         /// <summary>An implicit conversion operator from a string.</summary>
         /// <param name="value">The string value to wrap.</param>
-        public static implicit operator ValueString(string value)
-            => new ValueString(value);
+        public static implicit operator ValueString(string value) => Of(value);
 
         /// <summary>An equality operator for two value strings.</summary>
         /// <param name="left">The left operand.</param>
@@ -92,14 +93,24 @@ namespace Dawn
         ///     A new <see cref="ValueString" /> containing
         ///     the serialized <paramref name="value" />.
         /// </returns>
-        /// <remarks>
-        ///     Use this method to avoid boxing when initializing a
-        ///     <see cref="ValueString" /> from a struct.
-        ///     You can use the <see cref="ValueString(object)" /> constructor
-        ///     directly if your value is of a reference type.
-        /// </remarks>
         public static ValueString Of<T>(T value)
-            => new ValueString(Parser.Formatter<T>.Format(value));
+            => Of(Parser.Formatter<T>.Format(value));
+
+#pragma warning disable CS0618 // Type or member is obsolete
+
+        /// <summary>
+        ///     Initializes a new <see cref="ValueString" />
+        ///     using the specified string.
+        /// </summary>
+        /// <param name="value">The string value.</param>
+        /// <returns>
+        ///     A new <see cref="ValueString" /> encapsulating
+        ///     <paramref name="value" />.
+        /// </returns>
+        public static ValueString Of(string value)
+            => new ValueString(value);
+
+#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <summary>
         ///     Converts the value to the given type using the invariant
@@ -226,6 +237,31 @@ namespace Dawn
         }
 
         /// <summary>
+        ///     Finds the specified keys, replace them with their
+        ///     respective values and converts the output to the
+        ///     given type using the invariant culture.
+        /// </summary>
+        /// <typeparam name="T">The type to convert the formatted string to.</typeparam>
+        /// <param name="values">The key/value pairs to find and replace.</param>
+        /// <returns>The formatted and converted <see cref="value" />.</returns>
+        /// <exception cref="ArgumentException">
+        ///     <paramref name="values" /> contains an item with a
+        ///     <c>null</c> key or multiple items with the same key.
+        /// </exception>
+        /// <exception cref="InvalidCastException">
+        ///     The formatted <see cref="value" /> cannot be converted
+        ///     to the type of <typeparamref name="T" />.
+        /// </exception>
+        public T Format<T>(
+#if NETSTANDARD2_0
+            params (string Key, string Value)[] values
+#else
+            params KeyValuePair<string, string>[] values
+#endif
+            )
+            => Of(this.Format(values)).As<T>();
+
+        /// <summary>
         ///     Finds the specified keys and replace
         ///     them with their respective values.
         /// </summary>
@@ -252,7 +288,7 @@ namespace Dawn
                 var pair = values[i];
                 try
                 {
-                    replacements.Add(Regex.Escape(pair.Key), pair.Value ?? string.Empty);
+                    replacements.Add(pair.Key, pair.Value ?? string.Empty);
                 }
                 catch (ArgumentNullException x)
                 {
@@ -266,12 +302,13 @@ namespace Dawn
                 }
             }
 
+            var keys = replacements.Keys.Select(k => Regex.Escape(k));
 #if !NET35
-            var keys = string.Join("|", replacements.Keys);
+            var pattern = string.Join("|", keys);
 #else
-            var keys = string.Join("|", System.Linq.Enumerable.ToArray(replacements.Keys));
+            var pattern = string.Join("|", keys.ToArray());
 #endif
-            return new Regex($"({keys})").Replace(this.value, m => replacements[m.Value]);
+            return new Regex($"({pattern})").Replace(this.value, m => replacements[m.Value]);
         }
 
         /// <summary>
@@ -376,7 +413,7 @@ namespace Dawn
         void IXmlSerializable.ReadXml(XmlReader reader)
         {
             if (reader.Read())
-                this = new ValueString(reader.Value);
+                this = Of(reader.Value);
         }
 
         /// <inheritdoc />
