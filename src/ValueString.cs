@@ -31,25 +31,8 @@ namespace Dawn
         /// <summary>
         ///     Initializes a new instance of the <see cref="ValueString" /> struct.
         /// </summary>
-        /// <param name="value">The value to hold as string.</param>
-        /// <remarks>
-        ///     Invariant culture will be used converting the data to string
-        ///     if its type implements <see cref="IFormattable" />.
-        /// </remarks>
-        [Obsolete("Use ValueString.Of to create new ValueString instances.")]
-        public ValueString(object value)
-        {
-            this.value = value is IFormattable f
-                ? f.ToString(null, CultureInfo.InvariantCulture)
-                : value?.ToString();
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="ValueString" /> struct.
-        /// </summary>
         /// <param name="value">The string value.</param>
-        [Obsolete("Use ValueString.Of to create new ValueString instances.")]
-        public ValueString(string value) => this.value = value;
+        private ValueString(string value) => this.value = value;
 
         #endregion Constructors
 
@@ -96,8 +79,6 @@ namespace Dawn
         public static ValueString Of<T>(T value)
             => Of(Parser.Formatter<T>.Format(value));
 
-#pragma warning disable CS0618 // Type or member is obsolete
-
         /// <summary>
         ///     Initializes a new <see cref="ValueString" />
         ///     using the specified string.
@@ -109,8 +90,6 @@ namespace Dawn
         /// </returns>
         public static ValueString Of(string value)
             => new ValueString(value);
-
-#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <summary>
         ///     Converts the value to the given type using the invariant
