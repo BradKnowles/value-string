@@ -460,16 +460,16 @@ namespace Dawn
             public static class Formatter<T>
             {
                 /// <summary>The cached formatter.</summary>
-                public static readonly Func<T, string> Format = InitFormat();
+                public static readonly Func<T, IFormatProvider, string> Format = InitFormat();
 
                 /// <summary>
                 ///     Initializes a formatter for type <typeparamref name="T" />.
                 /// </summary>
                 /// <returns>
-                ///     A delegate that converts the specified object to
-                ///     string using the invariant culture where possible.
+                ///     A delegate that converts the specified object to string
+                ///     using the specified format provider where possible.
                 /// </returns>
-                private static Func<T, string> InitFormat()
+                private static Func<T, IFormatProvider, string> InitFormat()
                 {
                     var sourceType = typeof(T);
 #if ALT_REFLECTION
@@ -491,15 +491,15 @@ namespace Dawn
 
                         var compiled = lambda.Compile();
                         if (isValueType)
-                            return f => compiled(f, null, CultureInfo.InvariantCulture);
+                            return (f, provider) => compiled(f, null, provider);
                         else
-                            return f => f != null ? compiled(f, null, CultureInfo.InvariantCulture) : null;
+                            return (f, provider) => f != null ? compiled(f, null, provider) : null;
                     }
 
                     if (isValueType)
-                        return o => o.ToString();
+                        return (o, provider) => o.ToString();
                     else
-                        return o => o?.ToString();
+                        return (o, provider) => o?.ToString();
                 }
             }
 
@@ -704,7 +704,7 @@ namespace Dawn
                             }
                             catch (Exception)
                             {
-                                result = default(T);
+                                result = default;
                                 return false;
                             }
                         });

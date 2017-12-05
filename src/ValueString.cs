@@ -15,7 +15,7 @@ namespace Dawn
     using System.Xml.Serialization;
 
     /// <summary>Represents data serialized as a culture-neutral (invariant) string.</summary>
-    [DebuggerDisplay("{" + nameof(value) + "}")]
+    [DebuggerDisplay("{value}")]
     public partial struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
     {
         #region Fields
@@ -31,25 +31,8 @@ namespace Dawn
         /// <summary>
         ///     Initializes a new instance of the <see cref="ValueString" /> struct.
         /// </summary>
-        /// <param name="value">The value to hold as string.</param>
-        /// <remarks>
-        ///     Invariant culture will be used converting the data to string
-        ///     if its type implements <see cref="IFormattable" />.
-        /// </remarks>
-        [Obsolete("Use ValueString.Of to create new ValueString instances.")]
-        public ValueString(object value)
-        {
-            this.value = value is IFormattable f
-                ? f.ToString(null, CultureInfo.InvariantCulture)
-                : value?.ToString();
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="ValueString" /> struct.
-        /// </summary>
         /// <param name="value">The string value.</param>
-        [Obsolete("Use ValueString.Of to create new ValueString instances.")]
-        public ValueString(string value) => this.value = value;
+        private ValueString(string value) => this.value = value;
 
         #endregion Constructors
 
@@ -94,9 +77,7 @@ namespace Dawn
         ///     the serialized <paramref name="value" />.
         /// </returns>
         public static ValueString Of<T>(T value)
-            => Of(Parser.Formatter<T>.Format(value));
-
-#pragma warning disable CS0618 // Type or member is obsolete
+            => Of(Parser.Formatter<T>.Format(value, CultureInfo.InvariantCulture));
 
         /// <summary>
         ///     Initializes a new <see cref="ValueString" />
@@ -109,8 +90,6 @@ namespace Dawn
         /// </returns>
         public static ValueString Of(string value)
             => new ValueString(value);
-
-#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <summary>
         ///     Converts the value to the given type using the invariant
@@ -253,7 +232,7 @@ namespace Dawn
         ///     to the type of <typeparamref name="T" />.
         /// </exception>
         public T Format<T>(
-#if NETSTANDARD2_0
+#if !NET35
             params (string Key, string Value)[] values
 #else
             params KeyValuePair<string, string>[] values
@@ -272,7 +251,7 @@ namespace Dawn
         ///     <c>null</c> key or multiple items with the same key.
         /// </exception>
         public string Format(
-#if NETSTANDARD2_0
+#if !NET35
             params (string Key, string Value)[] values
 #else
             params KeyValuePair<string, string>[] values
@@ -286,14 +265,15 @@ namespace Dawn
             for (var i = 0; i < values.Length; i++)
             {
                 var pair = values[i];
-                try
-                {
-                    replacements.Add(pair.Key, pair.Value ?? string.Empty);
-                }
-                catch (ArgumentNullException x)
+                if (pair.Key == null)
                 {
                     var m = "Values cannot contain pairs with null keys.";
-                    throw new ArgumentException(m, nameof(values), x);
+                    throw new ArgumentException(m, nameof(values));
+                }
+
+                try
+                {
+                    replacements.Add($"{{{pair.Key}}}", pair.Value ?? string.Empty);
                 }
                 catch (ArgumentException x)
                 {
@@ -302,7 +282,7 @@ namespace Dawn
                 }
             }
 
-            var keys = replacements.Keys.Select(k => Regex.Escape(k));
+            var keys = replacements.Keys.Select(Regex.Escape);
 #if !NET35
             var pattern = string.Join("|", keys);
 #else
@@ -389,13 +369,17 @@ namespace Dawn
         /// </remarks>
         public override bool Equals(object obj)
         {
-            if (obj == null)
-                return this.value == null;
-
-            if (obj is string s)
-                return this.Equals(s);
-
-            return obj is ValueString && this.Equals((ValueString)obj);
+            switch (obj)
+            {
+                case null:
+                    return this.value == null;
+                case ValueString v:
+                    return this.Equals(v);
+                case string s:
+                    return this.Equals(s);
+                default:
+                    return false;
+            }
         }
 
         /// <summary>Returns the hash code for this instance.</summary>
@@ -411,14 +395,14 @@ namespace Dawn
 
         /// <inheritdoc />
         void IXmlSerializable.ReadXml(XmlReader reader)
-        {
-            if (reader.Read())
-                this = Of(reader.Value);
-        }
+            => this = Of(reader.GetAttribute(nameof(this.value)));
 
         /// <inheritdoc />
         void IXmlSerializable.WriteXml(XmlWriter writer)
-            => writer.WriteString(this.value);
+        {
+            if (this.value != null)
+                writer.WriteAttributeString(nameof(this.value), this.value);
+        }
 
         /// <summary>Gets a type's field with the specified name.</summary>
         /// <param name="type">The type containing the field.</param>

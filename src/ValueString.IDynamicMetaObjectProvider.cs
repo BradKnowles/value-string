@@ -49,7 +49,7 @@ namespace Dawn
                 if (binder.Type == this.LimitType)
                     return binder.FallbackConvert(new DynamicMetaObject(this.Expression, restrictions, this.Value));
 
-                var method = asMethods.GetOrCreate(binder.Type, t => GetAsMethod(t, false));
+                var method = asMethods.GetOrAdd(binder.Type, t => GetAsMethod(t, false));
                 var call = Expression.Call(Expression.Convert(this.Expression, this.LimitType), method);
                 return new DynamicMetaObject(call, restrictions);
             }

@@ -33,7 +33,7 @@ namespace Dawn
             /// <param name="key">The type to search.</param>
             /// <param name="valueFactory">The delegate to create a new value to cache.</param>
             /// <returns>The value that is retrieved from or added to the cache.</returns>
-            public T GetOrCreate(Type key, Func<Type, T> valueFactory)
+            public T GetOrAdd(Type key, Func<Type, T> valueFactory)
             {
 #if CONCURRENT_COLLECTIONS
                 return this.dictionary.GetOrAdd(key, valueFactory);
