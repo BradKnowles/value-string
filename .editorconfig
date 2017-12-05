@@ -56,6 +56,4 @@ dotnet_style_collection_initializer                        = true : error
 dotnet_style_coalesce_expression                           = true : error
 dotnet_style_null_propagation                              = true : error
 dotnet_style_explicit_tuple_names                          = true : error
-
-# Convert this to error after the default literal for nullable types is fixed.
-csharp_prefer_simple_default_expression                    = true : none
+csharp_prefer_simple_default_expression                    = true : error

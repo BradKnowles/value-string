@@ -704,7 +704,7 @@ namespace Dawn
                             }
                             catch (Exception)
                             {
-                                result = default(T);
+                                result = default;
                                 return false;
                             }
                         });
