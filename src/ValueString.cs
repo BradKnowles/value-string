@@ -77,7 +77,7 @@ namespace Dawn
         ///     the serialized <paramref name="value" />.
         /// </returns>
         public static ValueString Of<T>(T value)
-            => Of(Parser.Formatter<T>.Format(value));
+            => Of(Parser.Formatter<T>.Format(value, CultureInfo.InvariantCulture));
 
         /// <summary>
         ///     Initializes a new <see cref="ValueString" />
