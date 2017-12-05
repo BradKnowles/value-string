@@ -391,14 +391,14 @@ namespace Dawn
 
         /// <inheritdoc />
         void IXmlSerializable.ReadXml(XmlReader reader)
-        {
-            if (reader.Read())
-                this = Of(reader.Value);
-        }
+            => this = Of(reader.GetAttribute(nameof(this.value)));
 
         /// <inheritdoc />
         void IXmlSerializable.WriteXml(XmlWriter writer)
-            => writer.WriteString(this.value);
+        {
+            if (this.value != null)
+                writer.WriteAttributeString(nameof(this.value), this.value);
+        }
 
         /// <summary>Gets a type's field with the specified name.</summary>
         /// <param name="type">The type containing the field.</param>
