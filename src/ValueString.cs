@@ -369,13 +369,17 @@ namespace Dawn
         /// </remarks>
         public override bool Equals(object obj)
         {
-            if (obj == null)
-                return this.value == null;
-
-            if (obj is string s)
-                return this.Equals(s);
-
-            return obj is ValueString && this.Equals((ValueString)obj);
+            switch (obj)
+            {
+                case null:
+                    return this.value == null;
+                case ValueString v:
+                    return this.Equals(v);
+                case string s:
+                    return this.Equals(s);
+                default:
+                    return false;
+            }
         }
 
         /// <summary>Returns the hash code for this instance.</summary>
