@@ -15,7 +15,7 @@ namespace Dawn
     using System.Xml.Serialization;
 
     /// <summary>Represents data serialized as a culture-neutral (invariant) string.</summary>
-    [DebuggerDisplay("{" + nameof(value) + "}")]
+    [DebuggerDisplay("{value}")]
     public partial struct ValueString : IEquatable<ValueString>, IEquatable<string>, IXmlSerializable
     {
         #region Fields
