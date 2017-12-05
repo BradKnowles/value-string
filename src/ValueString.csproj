@@ -20,16 +20,30 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='netstandard1.0'">
-    <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
-  </ItemGroup>
-
   <ItemGroup>
+    <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" Condition="'$(TargetFramework)'=='netstandard1.0'" />
+    <PackageReference Include="System.ValueTuple" Version="4.4.0" Condition="'$(TargetFramework)'!='netstandard2.0' And '$(TargetFramework)'!='net35'" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <AdditionalFiles Include="../style/stylecop.json" />
   </ItemGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.0'">
+    <DefineConstants>ALT_REFLECTION</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.3'">
+    <DefineConstants>ALT_REFLECTION;CONCURRENT_COLLECTIONS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='net35'">
+    <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0' Or '$(TargetFramework)'=='net45' Or '$(TargetFramework)'=='net40'">
+    <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR;CONCURRENT_COLLECTIONS;DYNAMIC</DefineConstants>
+  </PropertyGroup>
 
   <PropertyGroup>
     <PackageId>Dawn.ValueString</PackageId>
@@ -46,22 +60,6 @@
     </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/safakgur/value-string</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.0'">
-    <DefineConstants>ALT_REFLECTION</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.3'">
-    <DefineConstants>ALT_REFLECTION;CONCURRENT_COLLECTIONS</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='net35'">
-    <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0' Or '$(TargetFramework)'=='net45' Or '$(TargetFramework)'=='net40'">
-    <DefineConstants>BINARY_SERIALIZATION;TYPE_DESCRIPTOR;CONCURRENT_COLLECTIONS;DYNAMIC</DefineConstants>
   </PropertyGroup>
 
 </Project>

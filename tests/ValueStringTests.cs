@@ -557,10 +557,7 @@ namespace Dawn.Tests
             Assert.Equal(0, b);
         }
 
-        /// <summary>
-        ///     Tests whether the <see cref="ValueString.Format" />
-        ///     method works properly.
-        /// </summary>
+        /// <summary>Tests whether the Format overloads works properly.</summary>
         [Fact(DisplayName = "ValueString can be formatted.")]
         public void ValueStringCanBeFormatted()
         {

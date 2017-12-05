@@ -232,7 +232,7 @@ namespace Dawn
         ///     to the type of <typeparamref name="T" />.
         /// </exception>
         public T Format<T>(
-#if NETSTANDARD2_0
+#if !NET35
             params (string Key, string Value)[] values
 #else
             params KeyValuePair<string, string>[] values
@@ -251,7 +251,7 @@ namespace Dawn
         ///     <c>null</c> key or multiple items with the same key.
         /// </exception>
         public string Format(
-#if NETSTANDARD2_0
+#if !NET35
             params (string Key, string Value)[] values
 #else
             params KeyValuePair<string, string>[] values
@@ -282,7 +282,7 @@ namespace Dawn
                 }
             }
 
-            var keys = replacements.Keys.Select(k => Regex.Escape(k));
+            var keys = replacements.Keys.Select(Regex.Escape);
 #if !NET35
             var pattern = string.Join("|", keys);
 #else
