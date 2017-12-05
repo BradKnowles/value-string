@@ -77,7 +77,7 @@ namespace Dawn
         /// <inheritdoc />
         object IConvertible.ToType(Type conversionType, IFormatProvider provider)
         {
-            var method = asMethods.GetOrCreate(conversionType, t => GetAsMethod(t, true));
+            var method = asMethods.GetOrAdd(conversionType, t => GetAsMethod(t, true));
             return method.Invoke(this, new[] { provider ?? CultureInfo.InvariantCulture });
         }
 
