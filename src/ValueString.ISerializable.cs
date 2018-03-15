@@ -8,6 +8,7 @@ namespace Dawn
     using System;
     using System.Globalization;
     using System.Runtime.Serialization;
+    using System.Security;
 
     /// <content>Contains the <see cref="ISerializable" /> implementation.</content>
     [Serializable]
@@ -23,6 +24,7 @@ namespace Dawn
             => this.value = info.GetString(nameof(this.value));
 
         /// <inheritdoc />
+        [SecurityCritical]
         void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
             => info.AddValue(nameof(this.value), this.value);
     }
